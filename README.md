@@ -1,0 +1,2 @@
+# node
+Arionum cryptocurrency node
