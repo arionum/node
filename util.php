@@ -105,6 +105,14 @@ elseif($cmd=="recheck-blocks"){
 } elseif($cmd=="mempool"){
 $res=$db->single("SELECT COUNT(1) from mempool");
 echo "Mempool size: $res\n";
+
+} elseif($cmd=="delete-peer"){
+        $peer=trim($argv[2]);
+        if(empty($peer)) die("Invalid peer");
+        $db->run("DELETE FROM peers WHERE ip=:ip",array(":ip"=>$peer));
+        echo "Peer removed\n";
+
+
 } else {
 	echo "Invalid command\n";
 }
