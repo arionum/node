@@ -29,7 +29,7 @@ if(!$db) die("Could not connect to the DB backend.");
 if (!extension_loaded("openssl") && !defined("OPENSSL_KEYTYPE_EC")) api_err("Openssl php extension missing");
 if (!extension_loaded("gmp")) api_err("gmp php extension missing");
 
-if(floatval(phpversion())<7.1) api_err("The minimum php version required is 7.1");
+if(floatval(phpversion())<7.2) api_err("The minimum php version required is 7.2");
 
 
 
