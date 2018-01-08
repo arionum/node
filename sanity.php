@@ -150,7 +150,10 @@ if($total_peers==0){
 	}
 	$r=$db->run("SELECT id,hostname FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP()");
 	$total_peers=count($r);
-	if($total_peers==0) die("Could not peer to any peers! Please check internet connectivity!\n");
+	if($total_peers==0){
+		@unlink("tmp/sanity-lock");
+		die("Could not peer to any peers! Please check internet connectivity!\n");
+	}
 }
 
 
