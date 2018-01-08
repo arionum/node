@@ -101,7 +101,7 @@ class Transaction {
         $res=$db->run("INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",$bind);
         if($res!=1) return false;
         $db->run("UPDATE accounts SET balance=balance+:val WHERE id=:id",array(":id"=>$x['dst'], ":val"=>$x['val']));
-        if($x['version']>0) $db->run("UPDATE accounts SET balance=balance-:val WHERE id=:id",array(":id"=>$x['src'], ":val"=>$x['val']+$x['fee']));
+	 if($x['version']>0) $db->run("UPDATE accounts SET balance=(balance-:val)-:fee WHERE id=:id",array(":id"=>$x['src'], ":val"=>$x['val'], ":fee"=>$x['fee']));
         $db->run("DELETE FROM mempool WHERE id=:id",array(":id"=>$x['id']));
         return true;
 
