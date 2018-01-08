@@ -8,6 +8,13 @@ date_default_timezone_set("Europe/Amsterdam");
 //error_reporting(E_ALL & ~E_NOTICE);
 error_reporting(0);
 ini_set('display_errors',"off");
+
+
+if(php_sapi_name() !== 'cli'&&substr_count($_SERVER['PHP_SELF'],"/")>1){
+	die("This application should only be run in the main directory /");
+}
+
+
 require_once("include/config.inc.php");
 require_once("include/db.inc.php");
 require_once("include/functions.inc.php");
@@ -45,9 +52,11 @@ if(file_exists("tmp/db-update")){
 	
 	$res=unlink("tmp/db-update");
 	if($res){
+		echo "Updating db schema! Please refresh!\n";
 		require_once("include/schema.inc.php");
 		exit;
 	}
+	echo "Could not access the tmp/db-update file. Please give full permissions to this file\n";
 }
 
 if($_config['dbversion']<2) exit;
