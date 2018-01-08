@@ -140,7 +140,9 @@ if($total_peers==0){
 	if(count($f)<2) die("Could nto connect to arionum.com! Will try later!\n");
 	foreach($f as $peer){
 		$peer=trim($peer);
-		
+		$peer = filter_var($peer, FILTER_SANITIZE_URL);
+        if (!filter_var($peer, FILTER_VALIDATE_URL)) continue;
+
 		$res=peer_post($peer."/peer.php?q=peer",array("hostname"=>$_config['hostname']));
 		if($res!==false) {$i++; echo "Peering OK - $peer\n"; }
 		else echo "Peering FAIL - $peer\n";
@@ -169,6 +171,8 @@ foreach($r as $x){
 				if(!$db->single("SELECT COUNT(1) FROM peers WHERE ip=:ip or hostname=:hostname",array(":ip"=>$peer['ip'],":hostname"=>$peer['hostname']))){
 					$i++;
 					if($i>$_config['max_test_peers']) break;
+					$peer['hostname'] = filter_var($peer['hostname'], FILTER_SANITIZE_URL);
+					
 					$test=peer_post($peer['hostname']."/peer.php?q=peer",array("hostname"=>$_config['hostname']));
 					if($test!==false){
 						 $total_peers++;
