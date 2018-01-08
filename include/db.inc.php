@@ -19,7 +19,7 @@ class db extends PDO {
                         parent::__construct($dsn, $user, $passwd, $options);
                 } catch (PDOException $e) {
                         $this->error = $e->getMessage();
-                        die("Could not connect to the DB");
+                        die("Could not connect to the DB - ".$this->error);
                 }
         }
 
