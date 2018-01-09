@@ -58,7 +58,10 @@ if($q=="peer"){
     
     $res=peer_post($hostname."/peer.php?q=peer",array("hostname"=>$_config['hostname']));
     if($res!==false) api_echo("re-peer-ok");
-    else api_err("re-peer failed - $result");
+    else{ 
+        $db->run("DELETE FROM peers WHERE ip=:ip",array(":ip"=>$ip));
+        api_err("re-peer failed - $result");
+    }
 }
 elseif($q=="ping"){
     api_echo("pong");
