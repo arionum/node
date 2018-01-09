@@ -30,7 +30,7 @@ if (!extension_loaded("openssl") && !defined("OPENSSL_KEYTYPE_EC")) api_err("Ope
 if (!extension_loaded("gmp")) api_err("gmp php extension missing");
 if (!extension_loaded('PDO')) api_err("pdo php extension missing");
 if (!extension_loaded("bcmath")) api_err("bcmath php extension missing");
-
+if (!defined("PASSWORD_ARGON2I")) api_err("The php version is not compiled with argon2i support");
 
 if(floatval(phpversion())<7.2) api_err("The minimum php version required is 7.2");
 
