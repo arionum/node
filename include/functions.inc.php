@@ -23,7 +23,7 @@ function _log($data){
     $date=date("[Y-m-d H:s:]");
     $trace=debug_backtrace(); 
     $location=$trace[1]['class'].'->'.$trace[1]['function'].'()';
-    //echo "$date [$location] $data\n";
+	if(php_sapi_name() === 'cli') "$date [$location] $data\n";
 }
 
 function pem2hex ($data) {
