@@ -43,8 +43,14 @@ if($q=="peer"){
 
     $res=$db->single("SELECT COUNT(1) FROM peers WHERE hostname=:hostname AND ip=:ip",array(":hostname"=>$hostname,":ip"=>$ip));
     
-    if($res==1) api_echo("peer-ok-already");
-
+    if($res==1){
+         if($data['repeer']==1){
+            $res=peer_post($hostname."/peer.php?q=peer",array("hostname"=>$_config['hostname']));
+            if($res!==false) api_echo("re-peer-ok");
+            else api_err("re-peer failed - $result");
+         }
+         api_echo("peer-ok-already");
+    }
     $res=$db->single("SELECT COUNT(1) FROM peers WHERE blacklisted<UNIX_TIMESTAMP() AND ping >UNIX_TIMESTAMP()-86400 AND reserve=0");
     $reserve=1;
     if($res<$_config['max_peers']) $reserve=0;

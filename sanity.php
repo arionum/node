@@ -143,7 +143,7 @@ if($total_peers==0){
 		$peer = filter_var($peer, FILTER_SANITIZE_URL);
         if (!filter_var($peer, FILTER_VALIDATE_URL)) continue;
 
-		$res=peer_post($peer."/peer.php?q=peer",array("hostname"=>$_config['hostname']));
+		$res=peer_post($peer."/peer.php?q=peer",array("hostname"=>$_config['hostname'], "repeer"=>1));
 		if($res!==false) {$i++; echo "Peering OK - $peer\n"; }
 		else echo "Peering FAIL - $peer\n";
 		if($i>$_config['max_peers']) break;
