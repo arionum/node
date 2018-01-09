@@ -112,6 +112,9 @@ public function difficulty($height=0){
 	} else {
 		$dif=$current['difficulty'];
 	}
+	if(strpos($dif,'.')!==false){
+		$dif=substr($dif,0,strpos($dif,'.'));
+	}
 	if($dif<1000) $dif=1000;
 	if($dif>9223372036854775800) $dif=9223372036854775800;
 
