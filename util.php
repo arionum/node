@@ -111,6 +111,16 @@ echo "Mempool size: $res\n";
         if(empty($peer)) die("Invalid peer");
         $db->run("DELETE FROM peers WHERE ip=:ip",array(":ip"=>$peer));
         echo "Peer removed\n";
+}elseif($cmd=="recheck-peers"){
+	$r=$db->run("SELECT * FROM peers");
+	foreach($r as $x){
+		$a=peer_post($x['hostname']."/peer.php?q=ping");
+		if($a!="pong"){
+			echo "$x[hostname] -> failed\n";
+			$db->run("DELETE FROM peers WHERE id=:id",array(":id"=>$x['id']));
+		} else echo "$x[hostname] ->ok \n";
+	}
+
 
 
 } else {

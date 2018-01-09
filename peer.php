@@ -164,7 +164,7 @@ elseif($q=="getBlock"){
  }
  
  elseif($q=="getPeers"){
-    $peers=$db->run("SELECT ip,hostname FROM peers ORDER by RAND()");
+    $peers=$db->run("SELECT ip,hostname FROM peers WHERE blacklisted<UNIX_TIMESTAMP() ORDER by RAND()");
     api_echo($peers);
  } else {
      api_err("Invalid request");
