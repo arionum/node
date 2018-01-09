@@ -137,7 +137,7 @@ if($total_peers==0){
 	echo "No peers found. Attempting to get peers from arionum.com\n";
 	$f=file("https://www.arionum.com/peers.txt");
 	shuffle($f);
-	if(count($f)<2) die("Could nto connect to arionum.com! Will try later!\n");
+	if(count($f)<2){ @unlink("tmp/sanity-lock") die("Could nto connect to arionum.com! Will try later!\n"); }
 	foreach($f as $peer){
 		$peer=trim($peer);
 		$peer = filter_var($peer, FILTER_SANITIZE_URL);
