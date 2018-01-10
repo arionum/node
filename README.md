@@ -6,6 +6,8 @@ Requires php 7.2, mysql/mariadb, php-pdo, php-bcmath and php-gmp
 
 This app should only be run in the main directory of the domain/subdomain, ex: http://111.111.111.111/
 
+The node should have a public IP and be accessible over internet. 
+
 Installation:
 1. Install MySQL or MariaDB and create a database and a user.
 
