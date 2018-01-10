@@ -67,7 +67,6 @@ if($_config['dbversion']<2) exit;
 if($_config['testnet']==true) $_config['coin'].="-testnet"; 
 
 $hostname=(!empty($_SERVER['HTTPS'])?'https':'http')."://".$_SERVER['HTTP_HOST'];
-if($_SERVER['SERVER_PORT']!=80&&$_SERVER['SERVER_PORT']!=443) $hostname.=":".$_SERVER['SERVER_PORT'];
 
 if($hostname!=$_config['hostname']&&$_SERVER['HTTP_HOST']!="localhost"&&$_SERVER['HTTP_HOST']!="127.0.0.1"&&$_SERVER['hostname']!='::1'&&php_sapi_name() !== 'cli'){
 	$db->run("UPDATE config SET val=:hostname WHERE cfg='hostname' LIMIT 1",array(":hostname"=>$hostname));
