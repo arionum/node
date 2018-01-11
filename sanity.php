@@ -122,7 +122,7 @@ $blocks=array();
 $blocks_count=array();
 $most_common="";
 $most_common_size=0;
-
+$total_active_peers=0;
 
 // checking peers
 
@@ -193,7 +193,7 @@ foreach($r as $x){
 	if($data===false) continue;
 	$db->run("UPDATE peers SET fails=0 WHERE id=:id",array(":id"=>$x['id']));		
 		
-
+		$total_active_peers++;
 		$block_peers[$data['id']][]=$x['hostname'];
 		$blocks_count[$data['id']]++;
 		$blocks[$data['id']]=$data;
@@ -248,7 +248,7 @@ if($current['height']<$largest_height&&$largest_height>1){
 		$data=peer_post($url."getBlock",array("height"=>$current['height']));
 
 		if($data===false){ _log("Could not get block from $host - $current[height]");  continue; }
-		if($data['id']==$most_common){	
+		if($data['id']==$most_common&&($most_common_size/$total_active_peers)>0.90){	
 		if($data['id']!=$current['id']){
 			$block->delete($current['height']-3);
 			$current=$block->current();
