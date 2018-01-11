@@ -248,13 +248,14 @@ if($current['height']<$largest_height&&$largest_height>1){
 		$data=peer_post($url."getBlock",array("height"=>$current['height']));
 
 		if($data===false){ _log("Could not get block from $host - $current[height]");  continue; }
-
-		while($data['id']!=$current['id']){
-			$block->delete($current['height']-10);
+		if($data['id']==$most_common){	
+		if($data['id']!=$current['id']){
+			$block->delete($current['height']-3);
 			$current=$block->current();
 			$data=peer_post($url."getBlock",array("height"=>$current['height']));
 			
 			if($data===false){_log("Could not get block from $host - $current[height]"); 	 break; }
+		}
 		}
 		if($data['id']!=$current['id']) continue;
 		while($current['height']<$largest_height){
