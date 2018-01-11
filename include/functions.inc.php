@@ -171,7 +171,7 @@ function ec_verify($data, $signature, $key){
 }
 
 
-function peer_post($url, $data=array()){
+function peer_post($url, $data=array(),$timeout=60){
     global $_config;
     $postdata = http_build_query(
         array(
@@ -182,7 +182,7 @@ function peer_post($url, $data=array()){
     
     $opts = array('http' =>
         array(
-            'timeout' => "60",
+            'timeout' => $timeout,
             'method'  => 'POST',
             'header'  => 'Content-type: application/x-www-form-urlencoded',
             'content' => $postdata

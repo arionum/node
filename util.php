@@ -121,6 +121,12 @@ echo "Mempool size: $res\n";
 		} else echo "$x[hostname] ->ok \n";
 	}
 
+}elseif($cmd=="peers-block"){
+	$r=$db->run("SELECT * FROM peers");
+        foreach($r as $x){
+                $a=peer_post($x['hostname']."/peer.php?q=currentBlock",array(),5);
+		echo "$x[hostname]\t$a[height]\n";
+        }
 
 
 } else {

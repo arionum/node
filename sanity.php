@@ -24,6 +24,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 OR OTHER DEALINGS IN THE SOFTWARE.
 */
 set_time_limit(0);
+error_reporting(0);
 if(php_sapi_name() !== 'cli') die("This should only be run as cli");
 
 if(file_exists("tmp/sanity-lock")){
@@ -43,7 +44,6 @@ if($arg!="microsanity") sleep(10);
 
 
 require_once("include/init.inc.php");
-
 
 if($_config['dbversion']<2){
 	die("DB schema not created");
@@ -132,6 +132,8 @@ $r=$db->run("SELECT id,hostname FROM peers WHERE reserve=0 AND blacklisted<UNIX_
 
 $total_peers=count($r);
 
+$peered=array();
+
 if($total_peers==0){
 	$i=0;
 	echo "No peers found. Attempting to get peers from arionum.com\n";
@@ -142,7 +144,9 @@ if($total_peers==0){
 		$peer=trim($peer);
 		$peer = filter_var($peer, FILTER_SANITIZE_URL);
         if (!filter_var($peer, FILTER_VALIDATE_URL)) continue;
-
+		$pid=md5($peer);
+		if($peered[$pid]==1) continue;
+		$peered[$pid]=1;
 		$res=peer_post($peer."/peer.php?q=peer",array("hostname"=>$_config['hostname'], "repeer"=>1));
 		if($res!==false) {$i++; echo "Peering OK - $peer\n"; }
 		else echo "Peering FAIL - $peer\n";
@@ -168,6 +172,10 @@ foreach($r as $x){
 	
 		$i=0;
 		foreach($data as $peer){
+			$pid=md5($peer);
+        	        if($peered[$pid]==1) continue;
+	                $peered[$pid]=1;
+
 			if($peer['hostname']==$_config['hostname']) continue;
 			if (!filter_var($peer['hostname'], FILTER_VALIDATE_URL)) continue;
 						
@@ -176,7 +184,7 @@ foreach($r as $x){
 					if($i>$_config['max_test_peers']) break;
 					$peer['hostname'] = filter_var($peer['hostname'], FILTER_SANITIZE_URL);
 					
-					$test=peer_post($peer['hostname']."/peer.php?q=peer",array("hostname"=>$_config['hostname']));
+					$test=peer_post($peer['hostname']."/peer.php?q=peer",array("hostname"=>$_config['hostname']),20);
 					if($test!==false){
 						 $total_peers++;
 						echo "Peered with: $peer[hostname]\n";
@@ -248,14 +256,43 @@ if($current['height']<$largest_height&&$largest_height>1){
 		$data=peer_post($url."getBlock",array("height"=>$current['height']));
 
 		if($data===false){ _log("Could not get block from $host - $current[height]");  continue; }
-		if($data['id']==$most_common&&($most_common_size/$total_active_peers)>0.90){	
-		if($data['id']!=$current['id']){
+		if($data['id']!=$current['id']&&$data['id']==$most_common&&($most_common_size/$total_active_peers)>0.90){
 			$block->delete($current['height']-3);
 			$current=$block->current();
 			$data=peer_post($url."getBlock",array("height"=>$current['height']));
 			
 			if($data===false){_log("Could not get block from $host - $current[height]"); 	 break; }
-		}
+		
+		}elseif($data['id']!=$current['id']&&$data['id']!=$most_common){
+				$invalid=false;
+				$last_good=$current['height'];
+				for($i=$current['height']-10;$i<$current['height'];$i++){
+				 	$data=peer_post($url."getBlock",array("height"=>$i));
+					if($data===false){ $invalid=true; break; }
+					$ext=$block->get($i);
+					if($i==$current['height']-10&&$ext['id']!=$data['id']){ $invalid=true; break; }
+					
+					if($ext['id']==$data['id']) $last_good=$i;
+										
+				}
+				if($invalid==false) {
+					$cblock=array();
+					for($i=$last_good;$i<=$largest_height;$i++){
+						$data=peer_post($url."getBlock",array("height"=>$i));
+						if($data===false){ $invalid=true; break; }
+						$cblock[$i]=$data;
+					}
+				
+					for($i=$last_good+1;$i<=$largest_height;$i++){
+						if(!$block->mine($cblock[$i]['public_key'], $cblock[$i]['nonce'], $cblock[$i]['argon'], $cblock[$i]['difficulty'], $cblock[$i-1]['id'])) {$invalid=true; break; }
+					}
+				}
+				if($invalid==false){
+					$block->delete($last_good);
+					$current=$block->current();
+					$data=$current;
+				}
+			
 		}
 		if($data['id']!=$current['id']) continue;
 		while($current['height']<$largest_height){
