@@ -99,7 +99,7 @@ elseif($q=="submitTransaction"){
     $trx->add_mempool($data, $_SERVER['REMOTE_ADDR']);
    
     $res=$db->row("SELECT COUNT(1) as c, sum(val) as v FROM  mempool ",array(":src"=>$data['src']));
-    if($res['c']<$_config['max_mempool_rebroadcast']&&$res['v']/$res['c']<$data['val']) system("php propagate.php transaction $data[id] &>/dev/null &");
+    if($res['c']<$_config['max_mempool_rebroadcast']&&$res['v']/$res['c']<$data['val']) system("php propagate.php transaction '$data[id]' &>/dev/null &");
     api_echo("transaction-ok");
 }
 elseif($q=="submitBlock"){
@@ -119,14 +119,14 @@ elseif($q=="submitBlock"){
             }
         }
         if($accept_new){
-            system("php sanity.php microsanity $ip &>/dev/null &");
+            system("php sanity.php microsanity '$ip' &>/dev/null &");
             api_echo("microsanity");
-        }
+        } else api_echo("reverse-microsanity");
     }
 
     if($current['height']!=$data['height']-1) {
         if($data['height']<$current['height']) api_err("block-too-old");
-        if($data['height']-$current['height']>30) api_err("block-out-of-sync");
+        if($data['height']-$current['height']>150) api_err("block-out-of-sync");
         api_echo(array("request"=>"microsync","height"=>$current['height'], "block"=>$current['id']));
         
     }
@@ -137,7 +137,7 @@ elseif($q=="submitBlock"){
     if(!$res) api_err("invalid-block-data");
     api_echo("block-ok");
 
-    system("php propagate.php block $data[id] &>/dev/null &");
+    system("php propagate.php block '$data[id]' &>/dev/null &");
 
 }
 

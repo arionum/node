@@ -171,8 +171,9 @@ function ec_verify($data, $signature, $key){
 }
 
 
-function peer_post($url, $data=array(),$timeout=60){
+function peer_post($url, $data=array(),$timeout=60,$debug=false){
     global $_config;
+    if($debug) echo "\nPeer post: $url\n";
     $postdata = http_build_query(
         array(
             'data' => json_encode($data),
@@ -192,7 +193,7 @@ function peer_post($url, $data=array(),$timeout=60){
     $context  = stream_context_create($opts);
     
     $result = file_get_contents($url, false, $context);
-    
+    if($debug) echo "\nPeer response: $result\n";
     $res=json_decode($result,true);
     if($res['status']!="ok"||$res['coin']!=$_config['coin']) return false;
     return $res['data'];

@@ -29,11 +29,16 @@ $block= new Block();
 $type=san($argv[1]);
 
 $id=san($argv[2]);
+$debug=false;
+if(trim($argv[5])=='debug') $debug=true;
 
 $peer=san(trim($argv[3]));
-if(empty($peer)&&$type=="block"){
+if((empty($peer)||$peer=='all')&&$type=="block"){
 	$whr="";
-	
+	if($id=="current") {
+		$current=$block->current();
+		$id=$current['id'];
+	}
 	$data=$block->export($id);
 	
 	if($data===false||empty($data)) die("Could not export block");  
@@ -44,7 +49,8 @@ if(empty($peer)&&$type=="block"){
 	$r=$db->run("SELECT * FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0");
 	foreach($r as $x) {
 		$host=base58_encode($x['hostname']);
-		system("php propagate.php $type $id $host &>/dev/null &");
+		if($debug) system("php propagate.php '$type' '$id' '$host' '$x[ip]' debug");
+		else system("php propagate.php '$type' '$id' '$host' '$x[ip]' &>/dev/null &");
 	}
 	exit;
 }
@@ -54,14 +60,19 @@ if(empty($peer)&&$type=="block"){
 
 if($type=="block"){
 
-	
-	$data=file_get_contents("tmp/$id");
-	if(empty($data)) { echo "Invalid Block data"; exit; }
-	$data=json_decode($data,true);
+	if($id=="current"){
+		$current=$block->current();
+		$data=$block->export($current['id']);
+		if(!$data)  { echo "Invalid Block data"; exit; }
+	} else {
+		$data=file_get_contents("tmp/$id");
+		if(empty($data)) { echo "Invalid Block data"; exit; }
+		$data=json_decode($data,true);
+	}
 	$hostname=base58_decode($peer);
 
-	echo "Peer response - $hostname:\n";
-	$response= peer_post($hostname."/peer.php?q=submitBlock",$data);
+	echo "Block sent to $hostname:\n";
+	$response= peer_post($hostname."/peer.php?q=submitBlock",$data,60,$debug);
 	if($response=="block-ok") { echo "Block $i accepted. Exiting.\n"; exit;}
 	elseif($response['request']=="microsync"){
 		echo "Microsync request\n";
@@ -76,12 +87,16 @@ if($type=="block"){
 
 		for($i=$height+1;$i<=$current['height'];$i++){
 			$data=$block->export("",$i);
-			$response = peer_post($hostname."/peer.php?q=submitBlock",$data);
-			
+			$response = peer_post($hostname."/peer.php?q=submitBlock",$data,60,$debug);
 			if($response!="block-ok") { echo "Block $i not accepted. Exiting.\n"; exit;}
 			echo "Block\t$i\t accepted\n";
 		}
 
+	} elseif($response=="reverse-microsanity"){
+		echo "Running microsanity\n";
+		$ip=trim($argv[4]);
+		if(empty($ip)) die("Invalid IP");
+		system("php sanity.php microsanity '$ip' &>/dev/null &");
 	}
 	else echo "Block not accepted!\n";
 

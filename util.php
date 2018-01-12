@@ -125,7 +125,10 @@ echo "Mempool size: $res\n";
 	$r=$db->run("SELECT * FROM peers");
         foreach($r as $x){
                 $a=peer_post($x['hostname']."/peer.php?q=currentBlock",array(),5);
+		$enc=base58_encode($x['hostname']);
+		if($argv[2]=="debug") echo "$enc\t";
 		echo "$x[hostname]\t$a[height]\n";
+
         }
 
 
