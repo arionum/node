@@ -125,7 +125,13 @@ elseif($q=="submitBlock"){
     }
 
     if($current['height']!=$data['height']-1) {
-        if($data['height']<$current['height']) api_err("block-too-old");
+        if($data['height']<$current['height']){ 
+		$pr=$db->row("SELECT * FROM peers WHERE ip=:ip",array(":ip"=>$ip));
+		if(!$pr) api_err("block-too-old");
+		$peer_host=base58_encode($pr['hostname']);
+		system("php propagate.php block current '$peer_host' '$pr[ip]'  &>/dev/null &");	
+		api_err("block-too-old");
+	}
         if($data['height']-$current['height']>150) api_err("block-out-of-sync");
         api_echo(array("request"=>"microsync","height"=>$current['height'], "block"=>$current['id']));
         
