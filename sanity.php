@@ -126,7 +126,7 @@ $total_active_peers=0;
 
 // checking peers
 
-$db->run("DELETE from peers WHERE fails>50");
+$db->run("DELETE from peers WHERE fails>100");
 
 $r=$db->run("SELECT id,hostname FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP()");
 
@@ -166,7 +166,7 @@ foreach($r as $x){
 	$data=peer_post($url."getPeers");
 	if($data===false) { 
 
-		$db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",array(":id"=>$x['id']));		
+		$db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*60) WHERE id=:id",array(":id"=>$x['id']));		
 		continue;
 	}
 	
@@ -349,7 +349,7 @@ $r=$db->run("SELECT * FROM peers WHERE blacklisted<UNIX_TIMESTAMP() and reserve=
 foreach($r as $x){
 	$url=$x['hostname']."/peer.php?q=";
 	$data=peer_post($url."ping");
-	if($data===false) $db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",array(":id"=>$x['id']));		
+	if($data===false) $db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*60) WHERE id=:id",array(":id"=>$x['id']));		
 	else $db->run("UPDATE peers SET fails=0 WHERE id=:id",array(":id"=>$x['id']));
 }
 
