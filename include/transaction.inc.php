@@ -124,6 +124,7 @@ class Transaction {
                 if($x['fee']<0) { _log("$x[id] - Fee below 0"); return false; }
             
                 $fee=$x['val']*0.0025;
+		$fee=number_format($fee,8,".","");
                 if($fee<0.00000001) $fee=0.00000001;
                 if($fee!=$x['fee']) { _log("$x[id] - Fee not 0.25%"); return false; }
 
