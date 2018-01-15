@@ -107,6 +107,8 @@ elseif($q=="currentBlock"){
     $dst=san($data['dst']);
 
     if(!$acc->valid($dst)) api_err("Invalid destination address");
+    $dst_b=base58_decode($dst);
+    if(strlen($dst_b)!=64)  api_err("Invalid destination address");
 
 
     $public_key=san($data['public_key']);
