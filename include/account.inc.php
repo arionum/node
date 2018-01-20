@@ -76,7 +76,7 @@ class Account {
 		global $db;
 		$res=$db->single("SELECT balance FROM accounts WHERE id=:id",array(":id"=>$id));
 		if($res===false) $res="0.00000000";
-		return number_fomrat($res,8,".","");
+		return number_format($res,8,".","");
 	}
 	public function pending_balance($id){
 		global $db;
@@ -85,7 +85,7 @@ class Account {
 		if($res=="0.00000000") return $res;
 		$mem=$db->single("SELECT SUM(val+fee) FROM mempool WHERE src=:id",array(":id"=>$id));
 		$rez=$res-$mem;
-		return number_fomrat($rez,8,".","");
+		return number_format($rez,8,".","");
 		
 	}
 	public function get_transactions($id){
