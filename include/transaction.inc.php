@@ -51,7 +51,6 @@ class Transaction {
                         continue;
                     } 
                     if(!$this->check($trans)){
-                        var_dump($trans);
                         _log("$x[id] - Transaction Check Failed");
                         continue;
                     } 
