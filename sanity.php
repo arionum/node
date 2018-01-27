@@ -30,7 +30,7 @@ if(php_sapi_name() !== 'cli') die("This should only be run as cli");
 if(file_exists("tmp/sanity-lock")){
 
 	$pid_time=filemtime("tmp/sanity-lock");
-	if(time()-$pid_time>3600){
+	if(time()-$pid_time>86400){
 		@unlink("tmp/sanity-lock");
 	}
 	die("Sanity lock in place");

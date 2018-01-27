@@ -90,8 +90,11 @@ elseif($q=="getPublicKey"){
     }
     api_Echo($res);
     
-}
-elseif($q=="currentBlock"){
+} elseif($q=="generateAccount"){
+	$acc=new Account;
+	$res=$acc->generate_account();
+	api_echo($res);
+} elseif($q=="currentBlock"){
     $current=$block->current();
      api_echo($current);
 } elseif($q=="version"){ 
