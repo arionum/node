@@ -130,7 +130,11 @@ echo "Mempool size: $res\n";
 		echo "$x[hostname]\t$a[height]\n";
 
         }
+}elseif($cmd=="balance"){
+	$id=san($argv[2]);
+	$res=$db->single("SELECT balance FROM accounts WHERE id=:id OR public_key=:id2 LIMIT 1",array(":id"=>$id, ":id2"=>$id));
 
+	echo "Balance: ".number_format($res)."\n";
 
 } else {
 	echo "Invalid command\n";
