@@ -30,7 +30,7 @@ set_time_limit(360);
 $q=$_GET['q'];
 
 $ip=$_SERVER['REMOTE_ADDR'];
-if(!in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
+if($_config['testnet']==false&&!in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
 
 if($q=="info"){
 	$diff=$block->difficulty();

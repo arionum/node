@@ -91,7 +91,7 @@ elseif($cmd=="recheck-blocks"){
 		
 		$key=$db->single("SELECT public_key FROM accounts WHERE id=:id",array(":id"=>$data['generator']));
 
-		if(!$block->mine($key,$data['nonce'], $data['argon'], $data['difficulty'], $blocks[$i-1]['id'])) {
+		if(!$block->mine($key,$data['nonce'], $data['argon'], $data['difficulty'], $blocks[$i-1]['id'],$blocks[$i-1]['height'])) {
 			_log("Invalid block detected. We should delete everything after $data[height] - $data[id]");
 			break;
 		}

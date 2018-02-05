@@ -50,7 +50,7 @@ class Transaction {
                         _log("$x[id] - Transaction has empty src");
                         continue;
                     } 
-                    if(!$this->check($trans)){
+                    if(!$this->check($trans, $current['height'])){
                         _log("$x[id] - Transaction Check Failed");
                         continue;
                     } 
@@ -114,8 +114,13 @@ class Transaction {
     }
     
 
-    public function check($x){
+    public function check($x, $height=0){
                 
+		if($height===0){
+			$block=new Block;
+			$current=$block->current();
+			$height=$current['height'];
+		}
                 $acc= new Account;
                 $info=$x['val']."-".$x['fee']."-".$x['dst']."-".$x['message']."-".$x['version']."-".$x['public_key']."-".$x['date'];
 
@@ -125,6 +130,7 @@ class Transaction {
                 $fee=$x['val']*0.0025;
 		$fee=number_format($fee,8,".","");
                 if($fee<0.00000001) $fee=0.00000001;
+		if($height>10800&&$fee>10) $fee=10; //10800
                 if($fee!=$x['fee']) { _log("$x[id] - Fee not 0.25%"); return false; }
 
                 if(!$acc->valid($x['dst'])) { _log("$x[id] - Invalid destination address"); return false; }

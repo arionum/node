@@ -101,6 +101,9 @@ elseif($q=="getPublicKey"){
      api_echo(VERSION);
 
 } elseif($q=="send"){
+    $current=$block->current();
+
+    if($current['height']>10790&&$current['height']<10810) api_err("Hard fork in progress. Please retry the transaction later!"); //10800
 
     $acc = new Account;
     $block = new Block;
@@ -131,7 +134,9 @@ elseif($q=="getPublicKey"){
     $val=$data['val']+0;
     $fee=$val*0.0025;
     if($fee<0.00000001) $fee=0.00000001;
+   
 
+    if($fee>10&&$current['height']>10800) $fee=10; //10800
     if($val<0.00000001) api_err("Invalid value");
  
    
