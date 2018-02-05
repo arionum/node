@@ -4,7 +4,7 @@ Arionum (ARO) cryptocurrency node
 -----------------------------------------------------
 Block 10800 Hard fork - Code name: Resistance
 
-In order to increase the fairness of Arionum and stay true to the inital claim of cpu-coin, we will be changing the mining alghoritm starting the block 10800.
+In order to increase the fairness of Arionum and stay true to the inital claim of being a cpu coin, we will be changing the mining algorithm starting the block 10800.
 
 The new mining alghoritm uses:
 
