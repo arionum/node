@@ -95,6 +95,8 @@ public function difficulty($height=0){
 	
 	$height=$current['height'];
 
+	if($height==10801) return 5555555555; //hard fork 10900 resistance
+
 	$limit=20;
 	if($height<20) 
 		$limit=$height-1;
