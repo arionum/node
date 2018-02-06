@@ -62,6 +62,20 @@ if(file_exists("tmp/db-update")){
 	echo "Could not access the tmp/db-update file. Please give full permissions to this file\n";
 }
 
+// REPORTING FROM WORKERS
+if(file_exists("tmp/report-db-update")){
+	
+	$res=unlink("tmp/report-db-update");
+	if($res){
+		echo "Updating reporting db schema! Please refresh!\n";
+		require_once("include/report-schema.inc.php");
+		exit;
+	}
+	echo "Could not access the tmp/report-db-update file. Please give full permissions to this file\n";
+}
+// END REPORTING FROM WORKERS
+
+
 if($_config['dbversion']<2) exit;
 
 if($_config['testnet']==true) $_config['coin'].="-testnet"; 
