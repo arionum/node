@@ -39,12 +39,12 @@ if(!in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
 
 $worker=san($_GET['id']);
 
-$workerid=single("SELECT id FROM workers WHERE name=:name and ip=:ip", array(":name"=>$worker, ":id"=>$ip) );
+$workerid=$db->single("SELECT id FROM workers WHERE name=:name and ip=:ip", array(":name"=>$worker, ":ip"=>$ip) );
 
 if($workerid == false) {
 	$db->run("INSERT ignore INTO workers SET name=:name, date=UNIX_TIMESTAMP(), ip=:ip",array(":ip"=>$ip, ":name"=>$worker));
 	// TODO: RETURNING
-	$workerid=single("SELECT id FROM workers WHERE name=:name and ip=:ip", array(":name"=>$worker, ":id"=>$ip) );
+	$workerid=$db->single("SELECT id FROM workers WHERE name=:name and ip=:ip", array(":name"=>$worker, ":ip"=>$ip) );
 }
 
 if ($workerid == false) {
@@ -54,7 +54,7 @@ if ($workerid == false) {
 	$elapsed=$_GET['elapsed'];
 	$rate=bcdiv($hashes, $elapsed, 3);
 
-	$db->run("INSERT ignore INTO worker_report SET id=:id, date=UNIX_TIMESTAMP(), hashes=:hashes, elapsed=:elapsed, rate=:rate",array(":id"=>$workerid, ":hashes"=>$hashes, ":elapsed"=>$elapsed, ":rate"=>$rate));
+	$db->run("INSERT ignore INTO worker_report SET worker=:id, date=UNIX_TIMESTAMP(), hashes=:hashes, elapsed=:elapsed, rate=:rate",array(":id"=>$workerid, ":hashes"=>$hashes, ":elapsed"=>$elapsed, ":rate"=>$rate));
 
 	api_echo("ok");
 	exit;
@@ -66,7 +66,7 @@ if ($workerid == false) {
 	$retries = intval($_GET['retries']);
 	$confirmed = isset($_GET['confirmed']);
 
-	$db->run("INSERT ignore INTO worker_discovery SET id=:id, date=UNIX_TIMESTAMP(), nonce=:nonce, argon=:argon, difficulty=:diff, dl=:dl, retries=:retries, confirmed=:confirmed",
+	$db->run("INSERT ignore INTO worker_discovery SET worker=:id, date=UNIX_TIMESTAMP(), nonce=:nonce, argon=:argon, difficulty=:diff, dl=:dl, retries=:retries, confirmed=:confirmed",
 		array(":id"=>$workerid, ":nonce"=>$nonce, ":argon"=>$argon, ":diff"=>$difficulty, ":dl"=>$dl, ":retries"=>$retries, ":confirmed"=>$confirmed));
 
 	api_err("ok");
