@@ -69,6 +69,12 @@ elseif($q=="ping"){
 
 
 elseif($q=="submitTransaction"){
+
+    $current=$block->current();
+
+    if($current['height']>10790&&$current['height']<10810) api_err("Hard fork in progress. Please retry the transaction later!");
+
+
     if($_config['sanity_sync']==1) api_err("sanity-sync");
     
     $data['id']=san($data['id']);

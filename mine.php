@@ -30,12 +30,12 @@ set_time_limit(360);
 $q=$_GET['q'];
 
 $ip=$_SERVER['REMOTE_ADDR'];
-if(!in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
+if($_config['testnet']==false&&!in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
 
 if($q=="info"){
 	$diff=$block->difficulty();
 	$current=$block->current();
-	api_echo(array("difficulty"=>$diff, "block"=>$current['id']));
+	api_echo(array("difficulty"=>$diff, "block"=>$current['id'], "height"=>$current['height']));
 	exit;
 } elseif($q=="submitNonce"){
 	if($_config['sanity_sync']==1) api_err("sanity-sync");

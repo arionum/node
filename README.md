@@ -1,6 +1,22 @@
 # node
 Arionum (ARO) cryptocurrency node
 
+-----------------------------------------------------
+Block 10800 Hard fork - Code name: Resistance
+
+In order to increase the fairness of Arionum and stay true to the inital claim of being a cpu coin, we will be changing the mining algorithm starting the block 10800.
+
+The new mining alghoritm uses:
+
+threads=1
+
+memory=524288
+
+time=1
+
+Also, starting block 10800, the maximum transaction fee will be 10 ARO.
+
+-----------------------------------------------------
 
 Requires php 7.2, mysql/mariadb, php-pdo, php-bcmath and php-gmp
 
@@ -24,3 +40,16 @@ Block explorer: https://arionum.info
 Forums: https://forum.arionum.com
 
 
+Development Fund
+
+ARO: 5WuRMXGM7Pf8NqEArVz1NxgSBptkimSpvuSaYC79g1yo3RDQc8TjVtGH5chQWQV7CHbJEuq9DmW5fbmCEW4AghQr
+
+LTC: LWgqzbXGeucKaMmJEvwaAWPFrAgKiJ4Y4m
+
+BTC: 1LdoMmYitb4C3pXoGNLL1VRj7xk3smGXoU
+
+ETH: 0x4B904bDf071E9b98441d25316c824D7b7E447527
+
+BCH: qrtkqrl3mxzdzl66nchkgdv73uu3rf7jdy7el2vduw
+
+If you'd like to support the Arionum development, you can donate to the addresses listed above.

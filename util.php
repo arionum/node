@@ -91,7 +91,7 @@ elseif($cmd=="recheck-blocks"){
 		
 		$key=$db->single("SELECT public_key FROM accounts WHERE id=:id",array(":id"=>$data['generator']));
 
-		if(!$block->mine($key,$data['nonce'], $data['argon'], $data['difficulty'], $blocks[$i-1]['id'])) {
+		if(!$block->mine($key,$data['nonce'], $data['argon'], $data['difficulty'], $blocks[$i-1]['id'],$blocks[$i-1]['height'])) {
 			_log("Invalid block detected. We should delete everything after $data[height] - $data[id]");
 			break;
 		}
@@ -130,7 +130,11 @@ echo "Mempool size: $res\n";
 		echo "$x[hostname]\t$a[height]\n";
 
         }
+}elseif($cmd=="balance"){
+	$id=san($argv[2]);
+	$res=$db->single("SELECT balance FROM accounts WHERE id=:id OR public_key=:id2 LIMIT 1",array(":id"=>$id, ":id2"=>$id));
 
+	echo "Balance: ".number_format($res)."\n";
 
 } else {
 	echo "Invalid command\n";

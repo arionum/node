@@ -95,6 +95,8 @@ public function difficulty($height=0){
 	
 	$height=$current['height'];
 
+	if($height==10801) return 5555555555; //hard fork 10900 resistance
+
 	$limit=20;
 	if($height<20) 
 		$limit=$height-1;
@@ -195,22 +197,26 @@ public function forge($nonce, $argon, $public_key, $private_key){
 }
 
 
-public function mine($public_key, $nonce, $argon, $difficulty=0, $current_id=0){
-	
+public function mine($public_key, $nonce, $argon, $difficulty=0, $current_id=0, $current_height=0){
+	global $_config;
 	if($current_id===0){
 		$current=$this->current();
 		$current_id=$current['id'];
-	}
+		$current_height=$current['height'];
+	} 
 	if($difficulty===0) $difficulty=$this->difficulty();
 	
-
-	$argon='$argon2i$v=19$m=16384,t=4,p=4'.$argon;
+	
+	if($current_height>10800) 	$argon='$argon2i$v=19$m=524288,t=1,p=1'.$argon; //10800
+	else $argon='$argon2i$v=19$m=16384,t=4,p=4'.$argon;
 	$base="$public_key-$nonce-".$current_id."-$difficulty";
 	
 	
 	
 	
-	if(!password_verify($base,$argon)) {  return false; }
+	if(!password_verify($base,$argon)) { return false; }
+
+	if($_config['testnet']==true) return true;
 
 	$hash=$base.$argon;
 
@@ -246,7 +252,7 @@ public function parse_block($block, $height, $data, $test=true){
 	foreach($data as &$x){
 		if(empty($x['src'])) $x['src']=$acc->get_address($x['public_key']);
 		
-		if(!$trx->check($x)) return false;
+		if(!$trx->check($x,$height)) return false;
 		
 		$balance[$x['src']]+=$x['val']+$x['fee'];
 		

@@ -30,7 +30,7 @@ if(php_sapi_name() !== 'cli') die("This should only be run as cli");
 if(file_exists("tmp/sanity-lock")){
 
 	$pid_time=filemtime("tmp/sanity-lock");
-	if(time()-$pid_time>3600){
+	if(time()-$pid_time>86400){
 		@unlink("tmp/sanity-lock");
 	}
 	die("Sanity lock in place");
@@ -85,7 +85,7 @@ do {
 	$prev = $block->get($current['height']-1);
 	
 	$public=$acc->public_key($data['generator']);
-	if(!$block->mine($public, $data['nonce'],$data['argon'],$block->difficulty($current['height']-1),$prev['id'])) { echo "Invalid prev-block\n"; break;}
+	if(!$block->mine($public, $data['nonce'],$data['argon'],$block->difficulty($current['height']-1),$prev['id'], $prev['height'])) { echo "Invalid prev-block\n"; break;}
 	$block->pop(1);
 	if(!$block->check($data)) break;
 
@@ -134,7 +134,7 @@ $total_peers=count($r);
 
 $peered=array();
 
-if($total_peers==0){
+if($total_peers==0&&$_config['testnet']==false){
 	$i=0;
 	echo "No peers found. Attempting to get peers from arionum.com\n";
 	$f=file("https://www.arionum.com/peers.txt");
@@ -284,7 +284,7 @@ if($current['height']<$largest_height&&$largest_height>1){
 					}
 				
 					for($i=$last_good+1;$i<=$largest_height;$i++){
-						if(!$block->mine($cblock[$i]['public_key'], $cblock[$i]['nonce'], $cblock[$i]['argon'], $cblock[$i]['difficulty'], $cblock[$i-1]['id'])) {$invalid=true; break; }
+						if(!$block->mine($cblock[$i]['public_key'], $cblock[$i]['nonce'], $cblock[$i]['argon'], $cblock[$i]['difficulty'], $cblock[$i-1]['id'],$cblock[$i-1]['height'])) {$invalid=true; break; }
 					}
 				}
 				if($invalid==false){
@@ -380,7 +380,7 @@ if($_config['sanity_recheck_blocks']>0){
 
 			$key=$db->single("SELECT public_key FROM accounts WHERE id=:id",array(":id"=>$data['generator']));
 
-			if(!$block->mine($key,$data['nonce'], $data['argon'], $data['difficulty'], $blocks[$i-1]['id'])) {
+			if(!$block->mine($key,$data['nonce'], $data['argon'], $data['difficulty'], $blocks[$i-1]['id'], $blocks[$i-1]['height'])) {
 					$db->run("UPDATE config SET val=1 WHERE cfg='sanity_sync'");
 					_log("Invalid block detected. Deleting everything after $data[height] - $data[id]");
 					sleep(10);
