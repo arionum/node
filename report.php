@@ -54,7 +54,7 @@ if ($workerid == false) {
 } elseif($q=="report"){
 	$hashes=$_GET['hashes'];
 	$elapsed=$_GET['elapsed'];
-	$rate=bcdiv($hashes, $elapsed, 3);
+	$rate=bcdiv($hashes, $elapsed, 6) * 1000;
 
 	$db->run("INSERT ignore INTO worker_report SET worker=:id, date=UNIX_TIMESTAMP(), hashes=:hashes, elapsed=:elapsed, rate=:rate",array(":id"=>$workerid, ":hashes"=>$hashes, ":elapsed"=>$elapsed, ":rate"=>$rate));
 
