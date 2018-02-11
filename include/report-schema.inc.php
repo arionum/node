@@ -48,6 +48,10 @@ if($dbversion==0){
 
     $dbversion++;
 }
+if($dbversion==1){
+  $db->run("ALTER TABLE `workers` ADD `type` varchar(12) NOT NULL DEFAULT 'cpu' AFTER `ip`; ");
+  $dbversion++;
+}
 if($dbversion!=$_config['reportdbversion']) $db->run("UPDATE config SET val=:val WHERE cfg='reportdbversion'",array(":val"=>$dbversion));
 $db->commit();
 

@@ -26,9 +26,9 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 
 /*
 	SCHEMA:
-&q=report&id=workerid&hashes=delta&elapsed=delta
+&q=report&id=workerid&type=workertype&hashes=delta&elapsed=delta
 
-&q=discovery&id=workerid&difficulty=diff&dl=dl&nonce=nonce&argon=argon&retries=ret&confirmed
+&q=discovery&id=workerid&type=workertype&difficulty=diff&dl=dl&nonce=nonce&argon=argon&retries=ret&confirmed
 */
 require_once("include/init.inc.php");
 set_time_limit(360);
@@ -38,11 +38,13 @@ $ip=$_SERVER['REMOTE_ADDR'];
 if(!in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
 
 $worker=san($_GET['id']);
+$type=san($_GET['type']);
 
-$workerid=$db->single("SELECT id FROM workers WHERE name=:name and ip=:ip", array(":name"=>$worker, ":ip"=>$ip) );
+$workerid=$db->single("SELECT id FROM workers WHERE name=:name and type=:type and ip=:ip", array(":name"=>$worker, ":type"=>$type, ":ip"=>$ip) );
 
 if($workerid == false) {
-	$db->run("INSERT ignore INTO workers SET name=:name, date=UNIX_TIMESTAMP(), ip=:ip",array(":ip"=>$ip, ":name"=>$worker));
+	$db->run("INSERT ignore INTO workers SET name=:name, date=UNIX_TIMESTAMP(), type=:type, ip=:ip",
+		array(":ip"=>$ip, ":type"=>$type, ":name"=>$worker));
 	// TODO: RETURNING
 	$workerid=$db->single("SELECT id FROM workers WHERE name=:name and ip=:ip", array(":name"=>$worker, ":ip"=>$ip) );
 }
