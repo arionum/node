@@ -46,6 +46,9 @@ if($dbversion==0){
     
     $db->run("ALTER TABLE `workers` ADD INDEX(`name`, `ip`);");
 
+    $db->run("INSERT INTO `config` (`cfg`, `val`) VALUES
+      ('reportdbversion', '1');");
+
     $dbversion++;
 }
 if($dbversion==1){
