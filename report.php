@@ -71,7 +71,7 @@ if ($workerid == false) {
 	$db->run("INSERT ignore INTO worker_discovery SET worker=:id, date=UNIX_TIMESTAMP(), nonce=:nonce, argon=:argon, difficulty=:diff, dl=:dl, retries=:retries, confirmed=:confirmed",
 		array(":id"=>$workerid, ":nonce"=>$nonce, ":argon"=>$argon, ":diff"=>$difficulty, ":dl"=>$dl, ":retries"=>$retries, ":confirmed"=>$confirmed));
 
-	api_err("ok");
+	api_echo("ok");
 } else {
 	api_err("invalid post");
 }
