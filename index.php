@@ -59,12 +59,12 @@ if ($workers!==false) {
 
     $totals['eff'] = bcdiv($totals['eff'], $count) ;
 
-    echo "<tr><td><b>Total</b></td><td>All Time</td><td>".$totals['hashes']."</td><td>".number_format($totals['rate'],2)."</td><td>".$totals['submit']."</td><td>".$totals['find']."</td><td>".$totals['failure']."</td><td>".number_format($totals['eff'],2)."</td></tr>";
+    echo "<tr><td><b>Total</b></td><td>".date("M d, Y H:i:s")."</td><td>".$totals['hashes']."</td><td>".number_format($totals['rate'],2)."</td><td>".$totals['submit']."</td><td>".$totals['find']."</td><td>".$totals['failure']."</td><td>".number_format($totals['eff'],2)."</td></tr>";
 
     foreach($workers as $t) {
 	$eff = 100.0 - bcdiv($t['failure'], $t['submit'] + $t['find'] + $t['failure'], 4) * 100;
 
-        echo "<tr><td>".$t['worker']."</td><td>".date("M/d/Y H:i:s",$t['latest_date'])."</td><td>".$t['total_hashes']."</td><td>".number_format($rate, 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff2,2)."</td></tr>";
+        echo "<tr><td>".$t['worker']."</td><td>".date("H:i:s",$t['latest_date'])."</td><td>".$t['total_hashes']."</td><td>".number_format($t["avg_rate"], 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff,2)."</td></tr>";
     }
 } else {
     echo "<tr><td colspan=\"8\">No Workers currently reporting.</td></tr>";
