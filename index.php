@@ -81,4 +81,7 @@ echo "<li><b>Submits: </b><span style=\"font-size: larger;\">".$all_submit["all_
 echo "<li><b>Block Finds: </b><span style=\"font-size: larger;\">".$all_submit["all_finds"]."</span></li>";
 echo "<li><b>Failures: </b><span style=\"font-size: larger;\">".$all_submit["all_failures"]."</span></li></ul>";
 
+
+echo "<script>setTimeout(function(){location.reload();}, 15000);</script>";
+
 ?>
