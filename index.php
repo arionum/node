@@ -64,7 +64,7 @@ if ($workers!==false) {
 
     $d1 = new DateTime();
     $d2 = clone $d1;
-    $d2->add(new DateInterval('PT'.$totals['life'].'S');
+    $d2->add(new DateInterval('PT'.$totals['life'].'S'));
     $iv = $d2->diff($d1);
 
     echo "<tr><td><b>Total</b></td><td>".date("M d, Y H:i:s")."</td><td>".$iv->format("%hH:%IM:%SS")."</td><td>".$totals['hashes']."</td><td>".number_format($totals['rate'],2)."</td><td>".$totals['submit']."</td><td>".$totals['find']."</td><td>".$totals['failure']."</td><td>".number_format($totals['eff'],2)."</td><td>".number_format($totals['drate'],0)."</td></tr>";
@@ -74,7 +74,7 @@ if ($workers!==false) {
         $drate = bcdiv($t['total_hashes'], $t['submit'] + $t['find'] + $t['failure'], 0);
         $d3 = new DateTime();
         $d4 = clone $d3;
-        $d4->add(new DateInterval('PT'.$t['life'].'S');
+        $d4->add(new DateInterval('PT'.$t['life'].'S'));
         $ix = $d4->diff($d3);
 
         echo "<tr><td>".$t['worker']."</td><td>".date("H:i:s",$t['latest_date'])."</td><td>".$ix->format("%hH:%IM:%SS)."</td><td>".$t['total_hashes']."</td><td>".number_format($t["avg_rate"], 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff,2)."</td><td>".$drate."</td></tr>";
