@@ -68,8 +68,9 @@ elseif($q=="getPendingBalance"){
 }
 elseif($q=="getTransactions"){
     $account=san($data['account']);
+    $limit=intval($data['limit']);
     $transactions=$acc->get_mempool_transactions($account);
-    $transactions=array_merge($transactions, $acc->get_transactions($account));
+    $transactions=array_merge($transactions, $acc->get_transactions($account,$limit));
     api_echo($transactions);
 
 }

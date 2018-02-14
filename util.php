@@ -135,6 +135,11 @@ echo "Mempool size: $res\n";
 	$res=$db->single("SELECT balance FROM accounts WHERE id=:id OR public_key=:id2 LIMIT 1",array(":id"=>$id, ":id2"=>$id));
 
 	echo "Balance: ".number_format($res)."\n";
+}elseif($cmd=="block"){
+        $id=san($argv[2]);
+        $res=$db->row("SELECT * FROM blocks WHERE id=:id OR height=:id2 LIMIT 1",array(":id"=>$id, ":id2"=>$id));
+	
+	var_dump($res);
 
 } else {
 	echo "Invalid command\n";

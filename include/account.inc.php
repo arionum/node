@@ -88,12 +88,14 @@ class Account {
 		return number_format($rez,8,".","");
 		
 	}
-	public function get_transactions($id){
+	public function get_transactions($id,$limit=100){
 		global $db;
 		$block=new Block;
         $current=$block->current();
 		$public_key=$this->public_key($id);
-		$res=$db->run("SELECT * FROM transactions WHERE dst=:dst or public_key=:src ORDER by height DESC LIMIT 100",array(":src"=>$public_key, ":dst"=>$id));
+		$limit=intval($limit);
+		if($limit>100||$limit<1) $limit=100;
+		$res=$db->run("SELECT * FROM transactions WHERE dst=:dst or public_key=:src ORDER by height DESC LIMIT :limit",array(":src"=>$public_key, ":dst"=>$id, ":limit"=>$limit));
 		
 		$transactions=array();
 		foreach($res as $x){
