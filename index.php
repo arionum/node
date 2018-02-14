@@ -77,7 +77,7 @@ if ($workers!==false) {
         $d4->add(new DateInterval('PT'.$t['life'].'S'));
         $ix = $d4->diff($d3);
 
-        echo "<tr><td>".$t['worker']."</td><td>".date("H:i:s",$t['latest_date'])."</td><td>".$ix->format("%hH:%IM:%SS)."</td><td>".$t['total_hashes']."</td><td>".number_format($t["avg_rate"], 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff,2)."</td><td>".$drate."</td></tr>";
+        echo "<tr><td>".$t['worker']."</td><td>".date("H:i:s",$t['latest_date'])."</td><td>".$ix->format("%hH:%IM:%SS")."</td><td>".$t['total_hashes']."</td><td>".number_format($t["avg_rate"], 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff,2)."</td><td>".$drate."</td></tr>";
     }
 } else {
     echo "<tr><td colspan=\"8\">No Workers currently reporting.</td></tr>";
