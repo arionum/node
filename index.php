@@ -67,7 +67,7 @@ if ($workers!==false) {
     $d2->add(new DateInterval('PT'.$totals['life'].'S'));
     $iv = $d2->diff($d1);
 
-    echo "<tr><td><b>Total</b></td><td>".date("M d, Y H:i:s")."</td><td>".$iv->format("%hH:%IM:%SS")."</td><td>".$totals['hashes']."</td><td>".number_format($totals['rate'],2)."</td><td>".$totals['submit']."</td><td>".$totals['find']."</td><td>".$totals['failure']."</td><td>".number_format($totals['eff'],2)."</td><td>".number_format($totals['drate'],0)."</td></tr>";
+    echo "<tr><td><b>Total</b></td><td>".date("M d, Y H:i:s")."</td><td>".$iv->format("%hhr %Imin %Ss")."</td><td>".$totals['hashes']."</td><td>".number_format($totals['rate'],2)."</td><td>".$totals['submit']."</td><td>".$totals['find']."</td><td>".$totals['failure']."</td><td>".number_format($totals['eff'],2)."</td><td>".number_format($totals['drate'],0)."</td></tr>";
 
     foreach($workers as $t) {
 	$eff = 100.0 - bcdiv($t['failure'], $t['submit'] + $t['find'] + $t['failure'], 4) * 100;
@@ -77,7 +77,7 @@ if ($workers!==false) {
         $d4->add(new DateInterval('PT'.$t['life'].'S'));
         $ix = $d4->diff($d3);
 
-        echo "<tr><td>".$t['worker']."</td><td>".date("H:i:s",$t['latest_date'])."</td><td>".$ix->format("%hH:%IM:%SS")."</td><td>".$t['total_hashes']."</td><td>".number_format($t["avg_rate"], 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff,2)."</td><td>".$drate."</td></tr>";
+        echo "<tr><td>".$t['worker']."</td><td>".date("H:i:s",$t['latest_date'])."</td><td>".$ix->format("%hhr %Imin %Ss")."</td><td>".$t['total_hashes']."</td><td>".number_format($t["avg_rate"], 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff,2)."</td><td>".$drate."</td></tr>";
     }
 } else {
     echo "<tr><td colspan=\"8\">No Workers currently reporting.</td></tr>";
