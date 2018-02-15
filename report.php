@@ -30,12 +30,13 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 
 &q=discovery&id=workerid&type=workertype&difficulty=diff&dl=dl&nonce=nonce&argon=argon&retries=ret&confirmed
 */
-require_once("include/init.inc.php");
+require_once("include/report-init.inc.php");
 set_time_limit(360);
 $q=$_GET['q'];
 
 $ip=$_SERVER['REMOTE_ADDR'];
-if(!in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
+$token=$_GET['token'];
+if($_config['report_token'] != $token && !in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
 
 $worker=san($_GET['id']);
 $type=san($_GET['type']);
