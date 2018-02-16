@@ -33,16 +33,16 @@ $current=$block->current();
 echo "<h3>Arionum Node Worker Dashboard</h3>";
 echo "Current block: $current[height] <br><br> Current difficulty: ".$block->difficulty();
 
-echo "<hr />";
+echo "<hr/>";
 
 echo "<table>";
 
-echo "<thead><tr><td>Worker</td><td>Last Report</td><td>Time Active</td><td>Hashes</td><td>H/s</td><td>Submits</td><td>Finds</td><td>Failures</td><td>Efficiency</td><td>Hash/Attempt</td></tr></thead><tbody>";
+echo "<thead><tr><td>Worker</td><td>Name</td><td>Last Report</td><td>Time Active</td><td>Hashes</td><td>H/s</td><td>Submits</td><td>Finds</td><td>Failures</td><td>Efficiency</td><td>Hash/Attempt</td></tr></thead><tbody>";
 
-$workers = $db->row("select a.worker as worker, total_hashes, avg_rate, find, submit, failure, latest_date, life from (select worker, sum(hashes) as total_hashes, (max(date) - min(date)) as life from worker_report group by worker having max(date) > UNIX_TIMESTAMP() - 120) a "
+$workers = $db->row("select a.worker as worker, d.name, total_hashes, avg_rate, find, submit, failure, latest_date, life from (select worker, sum(hashes) as total_hashes, (max(date) - min(date)) as life from worker_report group by worker having max(date) > UNIX_TIMESTAMP() - 120) a "
         ."left join (select worker, avg(rate) as avg_rate, max(date) as latest_date from worker_report where date > UNIX_TIMESTAMP() - 300 group by worker having max(date) > UNIX_TIMESTAMP() - 120) b on a.worker = b.worker "
         ."left join (select worker, sum(case when confirmed and dl <= 240 then 1 else 0 end) as find, sum(case when confirmed and dl > 240 then 1 else 0 end) as submit, sum(case when not confirmed then 1 else 0 end) as failure from worker_discovery group by worker) c "
-        ."on b.worker = c.worker");
+        ."on a.worker = c.worker left join (select id, name from workers) d on a.worker = d.id");
 
 if ($workers!==false) {
     $totals = array("hashes"=>0,"rate"=>0.0,"submit"=>0,"find"=>0,"failure"=>0,"eff"=>0.0,"drate"=>0.0,"life"=>0);
@@ -67,7 +67,7 @@ if ($workers!==false) {
     $d2->add(new DateInterval('PT'.$totals['life'].'S'));
     $iv = $d2->diff($d1);
 
-    echo "<tr><td><b>Total</b></td><td>".date("M d, Y H:i:s")."</td><td>".$iv->format("%adays %hhr %imin %ss")."</td><td>".number_format($totals['hashes'],0)."</td><td>".number_format($totals['rate'],2)."</td><td>".$totals['submit']."</td><td>".$totals['find']."</td><td>".$totals['failure']."</td><td>".number_format($totals['eff'],2)."</td><td>".number_format($totals['drate'],0)."</td></tr>";
+    echo "<tr><td><b>Total</b></td><td colspan='2'>".date("M d, Y H:i:s")."</td><td>".$iv->format("%adays %hhr %imin %ss")."</td><td>".number_format($totals['hashes'],0)."</td><td>".number_format($totals['rate'],2)."</td><td>".$totals['submit']."</td><td>".$totals['find']."</td><td>".$totals['failure']."</td><td>".number_format($totals['eff'],2)."</td><td>".number_format($totals['drate'],0)."</td></tr>";
 
     foreach($workers as $t) {
 	$eff = 100.0 - bcdiv($t['failure'], $t['submit'] + $t['find'] + $t['failure'], 4) * 100;
@@ -77,7 +77,7 @@ if ($workers!==false) {
         $d4->add(new DateInterval('PT'.$t['life'].'S'));
         $ix = $d4->diff($d3);
 
-        echo "<tr><td>".$t['worker']."</td><td>".date("H:i:s",$t['latest_date'])."</td><td>".$ix->format("%adays %hhr %imin %ss")."</td><td>".number_format($t['total_hashes'],0)."</td><td>".number_format($t["avg_rate"], 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff,2)."</td><td>".number_format($drate,0)."</td></tr>";
+        echo "<tr><td>".$t['worker']."</td><td>".$t['name']."</td><td>".date("H:i:s",$t['latest_date'])."</td><td>".$ix->format("%adays %hhr %imin %ss")."</td><td>".number_format($t['total_hashes'],0)."</td><td>".number_format($t["avg_rate"], 2)."</td><td>".$t['submit']."</td><td>".$t['find']."</td><td>".$t['failure']."</td><td>".number_format($eff,2)."</td><td>".number_format($drate,0)."</td></tr>";
     }
 } else {
     echo "<tr><td colspan=\"8\">No Workers currently reporting.</td></tr>";
