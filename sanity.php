@@ -333,6 +333,7 @@ if($current['height']<$largest_height&&$largest_height>1){
 $forgotten=$current['height']-$_config['sanity_rebroadcast_height'];
 $r=$db->run("SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",array(":forgotten"=>$forgotten));
 foreach($r as $x){
+	$x['id']=san($x['id']);
 	system("php propagate.php transaction $x[id] &>/dev/null &");
 	$db->run("UPDATE mempool SET height=:current WHERE id=:id",array(":id"=>$x['id'], ":current"=>$current['height']));
 }

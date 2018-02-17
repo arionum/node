@@ -23,6 +23,50 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 OR OTHER DEALINGS IN THE SOFTWARE.
 */
+
+
+/**
+ * @api {get} /api.php 01. Basic Information
+ * @apiName Info
+ * @apiGroup API
+ * @apiDescription Each API call will return the result in JSON format.
+ * There are 2 objects, "status" and "data".
+ *
+ * The "status" object returns "ok" when the transaction is successful and "error" on failure.
+ *
+ * The "data" object returns the requested data, as sub-objects.
+ *
+ * The parameters must be sent either as POST['data'], json encoded array or independently as GET. 
+ *
+ * @apiSuccess {String} status "ok" 
+ * @apiSuccess {String} data The data provided by the api will be under this object.
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *{
+ *   "status":"ok",
+ *   "data":{
+ *      "obj1":"val1",
+ *      "obj2":"val2",
+ *      "obj3":{
+ *         "obj4":"val4",
+ *         "obj5":"val5"
+ *      }
+ *   }
+ *}
+ *
+ * @apiError {String} status "error"
+ * @apiError {String} result Information regarding the error
+ *
+ * @apiErrorExample {json} Error-Response:
+ *     {
+ *       "status": "error",
+ *       "data": "The requested action could not be completed."
+ *     }
+ */
+
+
+
+
 require_once("include/init.inc.php");
 error_reporting(0);
 $ip=$_SERVER['REMOTE_ADDR'];
@@ -42,15 +86,49 @@ if(!empty($_POST['data'])){
 }
 
 
+/**
+ * @api {get} /api.php?q=getAddress  02. getAddress
+ * @apiName getAddress
+ * @apiGroup API
+ * @apiDescription Converts the public key to an ARO address.
+ *
+ * @apiParam {string} public_key The public key
+ *
+ * @apiSuccess {string} data Contains the address
+ */
+
 if($q=="getAddress"){
     $public_key=$data['public_key'];
     if(strlen($public_key)<32) api_err("Invalid public key");
     api_echo($acc->get_address($public_key));
 }
 elseif($q=="base58"){		
+/**
+ * @api {get} /api.php?q=base58  03. base58
+ * @apiName base58
+ * @apiGroup API
+ * @apiDescription Converts a string to base58.
+ *
+ * @apiParam {string} data Input string
+ *
+ * @apiSuccess {string} data Output string
+ */
+
     api_echo(base58_encode($data['data']));
 }
 elseif($q=="getBalance"){
+/**
+ * @api {get} /api.php?q=getBalance  04. getBalance
+ * @apiName getBalance
+ * @apiGroup API
+ * @apiDescription Returns the balance of a specific account or public key.
+ *
+ * @apiParam {string} [public_key] Public key
+ * @apiParam {string} [account] Account id / address
+ *
+ * @apiSuccess {string} data The ARO balance
+ */
+
     $public_key=$data['public_key'];
     $account=$data['account'];
     if(!empty($public_key)&&strlen($public_key)<32) api_err("Invalid public key");
@@ -60,28 +138,86 @@ elseif($q=="getBalance"){
     api_echo($acc->balance($account));
 }
 elseif($q=="getPendingBalance"){
+/**
+ * @api {get} /api.php?q=getPendingBalance  05. getPendingBalance
+ * @apiName getPendingBalance
+ * @apiGroup API
+ * @apiDescription Returns the pending balance, which includes pending transactions, of a specific account or public key.
+ *
+ * @apiParam {string} [public_key] Public key
+ * @apiParam {string} [account] Account id / address
+ *
+ * @apiSuccess {string} data The ARO balance
+ */
    
     $account=$data['account'];
+    if(!empty($public_key)&&strlen($public_key)<32) api_err("Invalid public key");
+    if(!empty($public_key)) $account=$acc->get_address($public_key);
     if(empty($account)) api_err("Invalid account id");
     $account=san($account);
     api_echo($acc->pending_balance($account));
 }
 elseif($q=="getTransactions"){
+/**
+ * @api {get} /api.php?q=getTransactions  06. getTransactions
+ * @apiName getTransactions
+ * @apiGroup API
+ * @apiDescription Returns the latest transactions of an account.
+ *
+ * @apiParam {string} [public_key] Public key
+ * @apiParam {string} [account] Account id / address
+ * @apiParam {numeric} [limit] Number of confirmed transactions, max 1000, min 1
+ *
+ * @apiSuccess {string} block  Block ID
+ * @apiSuccess {numeric} confirmation Number of confirmations
+ * @apiSuccess {numeric} date  Transaction's date in UNIX TIMESTAMP format
+ * @apiSuccess {string} dst  Transaction destination
+ * @apiSuccess {numeric} fee  The transaction's fee
+ * @apiSuccess {numeric} height  Block height
+ * @apiSuccess {string} id  Transaction ID/HASH
+ * @apiSuccess {string} message  Transaction's message
+ * @apiSuccess {string} signature  Transaction's signature
+ * @apiSuccess {string} public_key  Account's public_key
+ * @apiSuccess {string} src  Sender's address
+ * @apiSuccess {string} type  "debit", "credit" or "mempool"
+ * @apiSuccess {numeric} val Transaction value
+ * @apiSuccess {numeric} version Transaction version
+ */
+
     $account=san($data['account']);
+    if(!empty($public_key)&&strlen($public_key)<32) api_err("Invalid public key");
+    if(!empty($public_key)) $account=$acc->get_address($public_key);
+    if(empty($account)) api_err("Invalid account id");
+
     $limit=intval($data['limit']);
     $transactions=$acc->get_mempool_transactions($account);
     $transactions=array_merge($transactions, $acc->get_transactions($account,$limit));
     api_echo($transactions);
 
-}
-elseif($q=="getPublicKey"){
-    $account=san($data['account']);
-    if(empty($account)) api_err("Invalid account id");
-    $public_key=$acc->public_key($account);
-    if($public_key===false) api_err("No public key found for this account");
-    else api_echo($public_key);
-
 } elseif($q=="getTransaction"){
+/**
+ * @api {get} /api.php?q=getTransaction  07. getTransaction
+ * @apiName getTransaction
+ * @apiGroup API
+ * @apiDescription Returns one transaction.
+ *
+ * @apiParam {string} transaction Transaction ID
+ *
+ * @apiSuccess {string} block  Block ID
+ * @apiSuccess {numeric} confirmation Number of confirmations
+ * @apiSuccess {numeric} date  Transaction's date in UNIX TIMESTAMP format
+ * @apiSuccess {string} dst  Transaction destination
+ * @apiSuccess {numeric} fee  The transaction's fee
+ * @apiSuccess {numeric} height  Block height
+ * @apiSuccess {string} id  Transaction ID/HASH
+ * @apiSuccess {string} message  Transaction's message
+ * @apiSuccess {string} signature  Transaction's signature
+ * @apiSuccess {string} public_key  Account's public_key
+ * @apiSuccess {string} src  Sender's address
+ * @apiSuccess {string} type  "debit", "credit" or "mempool"
+ * @apiSuccess {numeric} val Transaction value
+ * @apiSuccess {numeric} version Transaction version
+ */
     
     $id=san($data['transaction']);
     $res=$trx->get_transaction($id);
@@ -90,18 +226,145 @@ elseif($q=="getPublicKey"){
         if($res===false) api_err("invalid transaction");
     }
     api_Echo($res);
+} elseif($q=="getPublicKey"){
+/**
+ * @api {get} /api.php?q=getPublicKey  08. getPublicKey
+ * @apiName getPublicKey
+ * @apiGroup API
+ * @apiDescription Returns the public key of a specific account.
+ *
+ * @apiParam {string} account Account id / address
+ *
+ * @apiSuccess {string} data The public key
+ */
+
+    $account=san($data['account']);
+    if(empty($account)) api_err("Invalid account id");
+    $public_key=$acc->public_key($account);
+    if($public_key===false) api_err("No public key found for this account");
+    else api_echo($public_key);
+
     
 } elseif($q=="generateAccount"){
+/**
+ * @api {get} /api.php?q=generateAccount  09. generateAccount
+ * @apiName generateAccount
+ * @apiGroup API
+ * @apiDescription Generates a new account. This function should only be used when the node is on the same host or over a really secure network.
+ *
+ * @apiSuccess {string} address Account address
+ * @apiSuccess {string} public_key Public key
+ * @apiSuccess {string} private_key Private key
+ */
+
 	$acc=new Account;
 	$res=$acc->generate_account();
 	api_echo($res);
 } elseif($q=="currentBlock"){
+/**
+ * @api {get} /api.php?q=currentBlock  10. currentBlock
+ * @apiName currentBlock
+ * @apiGroup API
+ * @apiDescription Returns the current block.
+ *
+ * @apiSuccess {string} id Blocks id
+ * @apiSuccess {string} generator Block Generator
+ * @apiSuccess {numeric} height Height
+ * @apiSuccess {numeric} date Block's date in UNIX TIMESTAMP format
+ * @apiSuccess {string} nonce Mining nonce
+ * @apiSuccess {string} signature Signature signed by the generator
+ * @apiSuccess {numeric} difficulty The base target / difficulty
+ * @apiSuccess {string} argon Mining argon hash
+
+
+ */
+
     $current=$block->current();
      api_echo($current);
+
+} elseif($q=="getBlock"){
+/**
+ * @api {get} /api.php?q=getBlock  11. getBlock
+ * @apiName getBlock
+ * @apiGroup API
+ * @apiDescription Returns the block.
+ *
+ * @apiParam {numeric} height Block Height
+ *
+ * @apiSuccess {string} id Block id
+ * @apiSuccess {string} generator Block Generator
+ * @apiSuccess {numeric} height Height
+ * @apiSuccess {numeric} date Block's date in UNIX TIMESTAMP format
+ * @apiSuccess {string} nonce Mining nonce
+ * @apiSuccess {string} signature Signature signed by the generator
+ * @apiSuccess {numeric} difficulty The base target / difficulty
+ * @apiSuccess {string} argon Mining argon hash
+ */
+	$height=san($data['height']);
+	$ret=$block->get($height);
+	if($ret==false) api_err("Invalid block");
+	else api_echo($ret);
+} elseif($q=="getBlockTransactions"){
+/**
+ * @api {get} /api.php?q=getBlockTransactions  12. getBlockTransactions
+ * @apiName getBlockTransactions
+ * @apiGroup API
+ * @apiDescription Returns the transactions of a specific block.
+ *
+ * @apiParam {numeric} [height] Block Height
+ * @apiParam {string} [block] Block id
+ *
+ * @apiSuccess {string} block  Block ID
+ * @apiSuccess {numeric} confirmation Number of confirmations
+ * @apiSuccess {numeric} date  Transaction's date in UNIX TIMESTAMP format
+ * @apiSuccess {string} dst  Transaction destination
+ * @apiSuccess {numeric} fee  The transaction's fee
+ * @apiSuccess {numeric} height  Block height
+ * @apiSuccess {string} id  Transaction ID/HASH
+ * @apiSuccess {string} message  Transaction's message
+ * @apiSuccess {string} signature  Transaction's signature
+ * @apiSuccess {string} public_key  Account's public_key
+ * @apiSuccess {string} src  Sender's address
+ * @apiSuccess {string} type  "debit", "credit" or "mempool"
+ * @apiSuccess {numeric} val Transaction value
+ * @apiSuccess {numeric} version Transaction version
+ */
+        $height=san($data['height']);
+	$block=san($data['block']);
+        $ret=$trx->get_transactions($height, $block);
+        if($ret===false) api_err("Invalid block");
+        else api_echo($ret);
+
 } elseif($q=="version"){ 
+/**
+ * @api {get} /api.php?q=version  13. version
+ * @apiName version
+ * @apiGroup API
+ * @apiDescription Returns the node's version.
+ *
+ *
+ * @apiSuccess {string} data  Version
+*/
      api_echo(VERSION);
 
 } elseif($q=="send"){
+/**
+ * @api {get} /api.php?q=send  14. send
+ * @apiName send
+ * @apiGroup API
+ * @apiDescription Sends a transaction.
+ *
+ * @apiParam {numeric} val Transaction value (without fees)
+ * @apiParam {string} dst Destination address
+ * @apiParam {string} public_key Sender's public key
+ * @apiParam {string} [signature] Transaction signature. It's recommended that the transaction is signed before being sent to the node to avoid sending your private key to the node.
+ * @apiParam {string} [private_key] Sender's private key. Only to be used when the transaction is not signed locally.
+ * @apiParam {numeric} [date] Transaction's date in UNIX TIMESTAMP format. Requried when the transaction is pre-signed.
+ * @apiParam {string} [message] A message to be included with the transaction. Maximum 128 chars.
+ * @apiParam {numeric} [version] The version of the transaction. 1 to send coins.
+ *
+ * @apiSuccess {string} data  Transaction id
+ */
     $current=$block->current();
 
     if($current['height']>10790&&$current['height']<10810) api_err("Hard fork in progress. Please retry the transaction later!"); //10800
@@ -140,8 +403,7 @@ elseif($q=="getPublicKey"){
     if($fee>10&&$current['height']>10800) $fee=10; //10800
     if($val<0.00000001) api_err("Invalid value");
  
-   
-    if($version<1) api_err("Invalid version");
+    if($version<1) $version=1;
 
     $val=number_format($val,8,'.','');
     $fee=number_format($fee,8,'.','');
@@ -204,6 +466,15 @@ elseif($q=="getPublicKey"){
     system("php propagate.php transaction $hash &>/dev/null &");
     api_echo($hash);
 } elseif($q=="mempoolSize"){
+/**
+ * @api {get} /api.php?q=mempoolSize  15. mempoolSize
+ * @apiName mempoolSize
+ * @apiGroup API
+ * @apiDescription Returns the number of transactions in mempool.
+ *
+ * @apiSuccess {numeric} data  Number of mempool transactions
+ */
+
     $res=$db->single("SELECT COUNT(1) FROM mempool");
     api_echo($res);
 

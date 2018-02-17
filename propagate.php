@@ -45,12 +45,13 @@ if((empty($peer)||$peer=='all')&&$type=="block"){
 	$data=json_encode($data);
 	// cache it to reduce the load
 	$res=file_put_contents("tmp/$id",$data);
-	if($res===false) die("Could not write the cachce file");
+	if($res===false) die("Could not write the cache file");
 	$r=$db->run("SELECT * FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0");
 	foreach($r as $x) {
 		$host=base58_encode($x['hostname']);
-		if($debug) system("php propagate.php '$type' '$id' '$host' '$x[ip]' debug");
-		else system("php propagate.php '$type' '$id' '$host' '$x[ip]' &>/dev/null &");
+		$ip=filter_var($x['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+		if($debug) system("php propagate.php '$type' '$id' '$host' '$ip' debug");
+		else system("php propagate.php '$type' '$id' '$host' 'ip' &>/dev/null &");
 	}
 	exit;
 }
@@ -95,6 +96,7 @@ if($type=="block"){
 	} elseif($response=="reverse-microsanity"){
 		echo "Running microsanity\n";
 		$ip=trim($argv[4]);
+		$ip=filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 		if(empty($ip)) die("Invalid IP");
 		system("php sanity.php microsanity '$ip' &>/dev/null &");
 	}

@@ -168,13 +168,11 @@ class Transaction {
     }
     public function get_transaction($id){
         global $db;
-        $block=new Block;
-        $current=$block->current();
         $acc=new Account;
         $x=$db->row("SELECT * FROM transactions WHERE id=:id",array(":id"=>$id));
        
-		if(!$x) return false;
-			$trans=array("block"=>$x['block'],"height"=>$x['height'], "id"=>$x['id'],"dst"=>$x['dst'],"val"=>$x['val'],"fee"=>$x['fee'],"signature"=>$x['signature'], "message"=>$x['message'],"version"=>$x['version'],"date"=>$x['date'], "public_key"=>$x['public_key']);
+	    if(!$x) return false;
+	    $trans=array("block"=>$x['block'],"height"=>$x['height'], "id"=>$x['id'],"dst"=>$x['dst'],"val"=>$x['val'],"fee"=>$x['fee'],"signature"=>$x['signature'], "message"=>$x['message'],"version"=>$x['version'],"date"=>$x['date'], "public_key"=>$x['public_key']);
             $trans['src']=$acc->get_address($x['public_key']);
             $trans['confirmations']=$current['height']-$x['height'];
 
@@ -189,6 +187,35 @@ class Transaction {
 			return $trans;
             
     }
+
+   public function get_transactions($height="", $id=""){
+        global $db;
+        $acc=new Account;
+	$height=san($height);
+	$id=san($id);
+	if(empty($id)&&empty($height)) return false;
+	if(!empty($id)) $r=$db->run("SELECT * FROM transactions WHERE block=:id AND version>0",array(":id"=>$id));
+	else $r=$db->run("SELECT * FROM transactions WHERE height=:height AND version>0",array(":height"=>$height));
+	$res=array();
+	foreach($r as $x){
+            $trans=array("block"=>$x['block'],"height"=>$x['height'], "id"=>$x['id'],"dst"=>$x['dst'],"val"=>$x['val'],"fee"=>$x['fee'],"signature"=>$x['signature'], "message"=>$x['message'],"version"=>$x['version'],"date"=>$x['date'], "public_key"=>$x['public_key']);
+            $trans['src']=$acc->get_address($x['public_key']);
+            $trans['confirmations']=$current['height']-$x['height'];
+
+                        if($x['version']==0) $trans['type']="mining";
+                        elseif($x['version']==1){
+                                if($x['dst']==$id) $trans['type']="credit";
+                                else $trans['type']="debit";
+                        } else {
+                                $trans['type']="other";
+                        }
+                        ksort($trans);
+			$res[]=$trans;
+	}
+	return $res;
+
+    }
+
 
     public function get_mempool_transaction($id){
         global $db;

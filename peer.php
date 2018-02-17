@@ -35,6 +35,8 @@ if(!empty($_POST['data'])){
 
 if($_POST['coin']!=$_config['coin']) api_err("Invalid coin");
 $ip=$_SERVER['REMOTE_ADDR'];
+$ip=filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+
 if($q=="peer"){
     
     $hostname = filter_var($data['hostname'], FILTER_SANITIZE_URL);
