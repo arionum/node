@@ -63,7 +63,7 @@ if ($workerid == false) {
 	exit;
 } elseif($q=="discovery"){
     	$nonce = san($_GET['nonce']);
-	$argon = san($_GET['argon']);
+	$argon = $_GET['argon'];
 	$difficulty = intval($_GET['difficulty']);
 	$dl = intval($_GET['dl']);
 	$retries = intval($_GET['retries']);

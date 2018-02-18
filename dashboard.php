@@ -39,12 +39,12 @@ echo "<table>";
 
 echo "<thead><tr><td>Worker</td><td>Name</td><td>Last Report</td><td>Time Active</td><td>Hashes</td><td>H/s</td><td>Submits</td><td>Finds</td><td>Failures</td><td>Efficiency</td><td>Hash/Attempt</td></tr></thead><tbody>";
 
-$workers = $db->row("select a.worker as worker, d.name, total_hashes, avg_rate, find, submit, failure, latest_date, life from (select worker, sum(hashes) as total_hashes, (max(date) - min(date)) as life from worker_report group by worker having max(date) > UNIX_TIMESTAMP() - 120) a "
+$workers = $db->run("select a.worker as worker, d.name, total_hashes, avg_rate, find, submit, failure, latest_date, life from (select worker, sum(hashes) as total_hashes, (max(date) - min(date)) as life from worker_report group by worker having max(date) > UNIX_TIMESTAMP() - 120) a "
         ."left join (select worker, avg(rate) as avg_rate, max(date) as latest_date from worker_report where date > UNIX_TIMESTAMP() - 300 group by worker having max(date) > UNIX_TIMESTAMP() - 120) b on a.worker = b.worker "
         ."left join (select worker, sum(case when confirmed and dl <= 240 then 1 else 0 end) as find, sum(case when confirmed and dl > 240 then 1 else 0 end) as submit, sum(case when not confirmed then 1 else 0 end) as failure from worker_discovery group by worker) c "
         ."on a.worker = c.worker left join (select id, name from workers) d on a.worker = d.id");
 
-if ($workers!==false) {
+if (count($workers)>0) {
     $totals = array("hashes"=>0,"rate"=>0.0,"submit"=>0,"find"=>0,"failure"=>0,"eff"=>0.0,"drate"=>0.0,"life"=>0);
     $count = 0;
     foreach($workers as $t) {
