@@ -76,7 +76,7 @@ if(empty($_config['hostname'])||$_config['hostname']=="http://"||$_config['hostn
 
 
 	$t=time();
-	if($t-$_config['sanity_last']>$_config['sanity_interval']&& php_sapi_name() !== 'cli') system("php sanity.php &>>/dev/null &");
+	if($t-$_config['sanity_last']>$_config['sanity_interval']&& php_sapi_name() !== 'cli') system("php sanity.php  > /dev/null 2>&1  &");
 
 
 ?>
