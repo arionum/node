@@ -1,7 +1,7 @@
 <?php
-/* 
+/*
 The MIT License (MIT)
-Copyright (c) 2018 AroDev 
+Copyright (c) 2018 AroDev
 
 www.arionum.com
 
@@ -40,8 +40,8 @@ if((empty($peer)||$peer=='all')&&$type=="block"){
 		$id=$current['id'];
 	}
 	$data=$block->export($id);
-	
-	if($data===false||empty($data)) die("Could not export block");  
+
+	if($data===false||empty($data)) die("Could not export block");
 	$data=json_encode($data);
 	// cache it to reduce the load
 	$res=file_put_contents("tmp/$id",$data);
@@ -51,7 +51,7 @@ if((empty($peer)||$peer=='all')&&$type=="block"){
 		$host=base58_encode($x['hostname']);
 		$ip=filter_var($x['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 		if($debug) system("php propagate.php '$type' '$id' '$host' '$ip' debug");
-		else system("php propagate.php '$type' '$id' '$host' 'ip' &>/dev/null &");
+		else system("php propagate.php '$type' '$id' '$host' 'ip' > /dev/null 2>&1 &");
 	}
 	exit;
 }
@@ -98,7 +98,7 @@ if($type=="block"){
 		$ip=trim($argv[4]);
 		$ip=filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 		if(empty($ip)) die("Invalid IP");
-		system("php sanity.php microsanity '$ip' &>/dev/null &");
+		system("php sanity.php microsanity '$ip' > /dev/null 2>&1 &");
 	}
 	else echo "Block not accepted!\n";
 
@@ -106,11 +106,11 @@ if($type=="block"){
 if($type=="transaction"){
 
 	$trx=new Transaction;
-	
+
 	$data=$trx->export($id);
 
 	if(!$data){ echo "Invalid transaction id\n"; exit; }
-	
+
 	if($data['peer']=="local") $r=$db->run("SELECT hostname FROM peers WHERE blacklisted < UNIX_TIMESTAMP()");
 	else $r=$db->run("SELECT hostname FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0  ORDER by RAND() LIMIT ".$_config['transaction_propagation_peers']);
 	foreach($r as $x){
