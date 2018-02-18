@@ -51,7 +51,7 @@ if((empty($peer)||$peer=='all')&&$type=="block"){
 		$host=base58_encode($x['hostname']);
 		$ip=filter_var($x['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 		if($debug) system("php propagate.php '$type' '$id' '$host' '$ip' debug");
-		else system("php propagate.php '$type' '$id' '$host' 'ip' &>/dev/null &");
+		else system("php propagate.php '$type' '$id' '$host' 'ip'  > /dev/null 2>&1  &");
 	}
 	exit;
 }
@@ -98,7 +98,7 @@ if($type=="block"){
 		$ip=trim($argv[4]);
 		$ip=filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 		if(empty($ip)) die("Invalid IP");
-		system("php sanity.php microsanity '$ip' &>/dev/null &");
+		system("php sanity.php microsanity '$ip'  > /dev/null 2>&1  &");
 	}
 	else echo "Block not accepted!\n";
 

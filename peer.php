@@ -107,7 +107,7 @@ elseif($q=="submitTransaction"){
     $trx->add_mempool($data, $_SERVER['REMOTE_ADDR']);
    
     $res=$db->row("SELECT COUNT(1) as c, sum(val) as v FROM  mempool ",array(":src"=>$data['src']));
-    if($res['c']<$_config['max_mempool_rebroadcast']&&$res['v']/$res['c']<$data['val']) system("php propagate.php transaction '$data[id]' &>/dev/null &");
+    if($res['c']<$_config['max_mempool_rebroadcast']&&$res['v']/$res['c']<$data['val']) system("php propagate.php transaction '$data[id]'  > /dev/null 2>&1  &");
     api_echo("transaction-ok");
 }
 elseif($q=="submitBlock"){
@@ -127,7 +127,7 @@ elseif($q=="submitBlock"){
             }
         }
         if($accept_new){
-            system("php sanity.php microsanity '$ip' &>/dev/null &");
+            system("php sanity.php microsanity '$ip'  > /dev/null 2>&1  &");
             api_echo("microsanity");
         } else api_echo("reverse-microsanity");
     }
@@ -137,7 +137,7 @@ elseif($q=="submitBlock"){
 		$pr=$db->row("SELECT * FROM peers WHERE ip=:ip",array(":ip"=>$ip));
 		if(!$pr) api_err("block-too-old");
 		$peer_host=base58_encode($pr['hostname']);
-		system("php propagate.php block current '$peer_host' '$pr[ip]'  &>/dev/null &");	
+		system("php propagate.php block current '$peer_host' '$pr[ip]'   > /dev/null 2>&1  &");	
 		api_err("block-too-old");
 	}
         if($data['height']-$current['height']>150) api_err("block-out-of-sync");
@@ -151,7 +151,7 @@ elseif($q=="submitBlock"){
     if(!$res) api_err("invalid-block-data");
     api_echo("block-ok");
 
-    system("php propagate.php block '$data[id]' &>/dev/null &");
+    system("php propagate.php block '$data[id]'  > /dev/null 2>&1  &");
 
 }
 

@@ -56,7 +56,7 @@ if($q=="info"){
 		
 		if($res){
 			$current=$block->current();
-			system("php propagate.php block $current[id] &>/dev/null &");
+			system("php propagate.php block $current[id]  > /dev/null 2>&1  &");
 			api_echo("accepted");
 		} 
 	}

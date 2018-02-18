@@ -140,6 +140,14 @@ echo "Mempool size: $res\n";
         $res=$db->row("SELECT * FROM blocks WHERE id=:id OR height=:id2 LIMIT 1",array(":id"=>$id, ":id2"=>$id));
 	
 	var_dump($res);
+}elseif($cmd=="check-address"){
+	$dst=trim($argv[2]);
+	$acc=new Account;
+	if(!$acc->valid($dst)) die("Invalid address");
+	$dst_b=base58_decode($dst);
+	if(strlen($dst_b)!=64)  die("Invalid address - ".strlen($dst_b)." bytes");
+	
+	echo "The address is valid\n";
 
 } else {
 	echo "Invalid command\n";
