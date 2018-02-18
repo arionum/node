@@ -1,7 +1,7 @@
 <?php
-/* 
+/*
 The MIT License (MIT)
-Copyright (c) 2018 AroDev 
+Copyright (c) 2018 AroDev
 
 www.arionum.com
 
@@ -36,9 +36,9 @@ OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * The "data" object returns the requested data, as sub-objects.
  *
- * The parameters must be sent either as POST['data'], json encoded array or independently as GET. 
+ * The parameters must be sent either as POST['data'], json encoded array or independently as GET.
  *
- * @apiSuccess {String} status "ok" 
+ * @apiSuccess {String} status "ok"
  * @apiSuccess {String} data The data provided by the api will be under this object.
  *
  * @apiSuccessExample {json} Success-Response:
@@ -102,7 +102,7 @@ if($q=="getAddress"){
     if(strlen($public_key)<32) api_err("Invalid public key");
     api_echo($acc->get_address($public_key));
 }
-elseif($q=="base58"){		
+elseif($q=="base58"){
 /**
  * @api {get} /api.php?q=base58  03. base58
  * @apiName base58
@@ -149,7 +149,7 @@ elseif($q=="getPendingBalance"){
  *
  * @apiSuccess {string} data The ARO balance
  */
-   
+
     $account=$data['account'];
     if(!empty($public_key)&&strlen($public_key)<32) api_err("Invalid public key");
     if(!empty($public_key)) $account=$acc->get_address($public_key);
@@ -218,7 +218,7 @@ elseif($q=="getTransactions"){
  * @apiSuccess {numeric} val Transaction value
  * @apiSuccess {numeric} version Transaction version
  */
-    
+
     $id=san($data['transaction']);
     $res=$trx->get_transaction($id);
     if($res===false) {
@@ -244,7 +244,7 @@ elseif($q=="getTransactions"){
     if($public_key===false) api_err("No public key found for this account");
     else api_echo($public_key);
 
-    
+
 } elseif($q=="generateAccount"){
 /**
  * @api {get} /api.php?q=generateAccount  09. generateAccount
@@ -335,7 +335,7 @@ elseif($q=="getTransactions"){
         if($ret===false) api_err("Invalid block");
         else api_echo($ret);
 
-} elseif($q=="version"){ 
+} elseif($q=="version"){
 /**
  * @api {get} /api.php?q=version  13. version
  * @apiName version
@@ -371,9 +371,9 @@ elseif($q=="getTransactions"){
 
     $acc = new Account;
     $block = new Block;
-    
+
     $trx = new Transaction;
-    
+
     $dst=san($data['dst']);
 
     if(!$acc->valid($dst)) api_err("Invalid destination address");
@@ -388,7 +388,7 @@ elseif($q=="getTransactions"){
     $signature=san($data['signature']);
     if(!$acc->valid_key($signature)) api_err("Invalid signature");
     $date=$data['date']+0;
-    
+
     if($date==0) $date=time();
     if($date<time()-(3600*24*48)) api_err("The date is too old");
     if($date>time()+86400) api_err("Invalid Date");
@@ -398,72 +398,72 @@ elseif($q=="getTransactions"){
     $val=$data['val']+0;
     $fee=$val*0.0025;
     if($fee<0.00000001) $fee=0.00000001;
-   
+
 
     if($fee>10&&$current['height']>10800) $fee=10; //10800
     if($val<0.00000001) api_err("Invalid value");
- 
+
     if($version<1) $version=1;
 
     $val=number_format($val,8,'.','');
     $fee=number_format($fee,8,'.','');
-    
-    
+
+
     if(empty($public_key)&&empty($private_key)) api_err("Either the private key or the public key must be sent");
-    
-    
-    
+
+
+
     if(empty($private_key)&&empty($signature)) api_err("Either the private_key or the signature must be sent");
     if(empty($public_key))
     {
-    
+
         $pk=coin2pem($private_key,true);
         $pkey=openssl_pkey_get_private($pk);
         $pub = openssl_pkey_get_details($pkey);
         $public_key= pem2coin($pub['key']);
-    
+
     }
     $transaction=array("val"=>$val, "fee"=>$fee, "dst"=>$dst, "public_key"=>$public_key,"date"=>$date, "version"=>$version,"message"=>$message, "signature"=>$signature);
-    
+
     if(!empty($private_key)){
-        
+
             $signature=$trx->sign($transaction, $private_key);
             $transaction['signature']=$signature;
-        
+
     }
-    
-    
+
+
     $hash=$trx->hash($transaction);
     $transaction['id']=$hash;
-    
-    
-   
+
+
+
     if(!$trx->check($transaction)) api_err("Transaction signature failed");
-    
-       
-    
-    
+
+
+
+
     $res=$db->single("SELECT COUNT(1) FROM mempool WHERE id=:id",array(":id"=>$hash));
     if($res!=0) api_err("The transaction is already in mempool");
-    
+
     $res=$db->single("SELECT COUNT(1) FROM transactions WHERE id=:id",array(":id"=>$hash));
     if($res!=0) api_err("The transaction is already in a block");
-    
-    
-    
+
+
+
     $src=$acc->get_address($public_key);
     $transaction['src']=$src;
     $balance=$db->single("SELECT balance FROM accounts WHERE id=:id",array(":id"=>$src));
     if($balance<$val+$fee) api_err("Not enough funds");
-    
-    
+
+
     $memspent=$db->single("SELECT SUM(val+fee) FROM mempool WHERE src=:src",array(":src"=>$src));
     if($balance-$memspent<$val+$fee) api_err("Not enough funds (mempool)");
-    
-    
-    
+
+
+
     $trx->add_mempool($transaction, "local");
-    system("php propagate.php transaction $hash &>/dev/null &");
+    system("php propagate.php transaction $hash > /dev/null 2>&1 &");
     api_echo($hash);
 } elseif($q=="mempoolSize"){
 /**

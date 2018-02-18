@@ -1,7 +1,7 @@
 <?php
-/* 
+/*
 The MIT License (MIT)
-Copyright (c) 2018 AroDev 
+Copyright (c) 2018 AroDev
 
 www.arionum.com
 
@@ -43,22 +43,22 @@ if($q=="info"){
 	$argon=$_POST['argon'];
 	$public_key=san($_POST['public_key']);
 	$private_key=san($_POST['private_key']);
-	
+
 	$result=$block->mine($public_key, $nonce, $argon);
 
 	if($result) {
-			
-			$res=$block->forge($nonce,$argon, $public_key, $private_key);
-			
-			
-			
 
-		
+			$res=$block->forge($nonce,$argon, $public_key, $private_key);
+
+
+
+
+
 		if($res){
 			$current=$block->current();
-			system("php propagate.php block $current[id] &>/dev/null &");
+			system("php propagate.php block $current[id] > /dev/null 2>&1 &");
 			api_echo("accepted");
-		} 
+		}
 	}
 	api_err("rejected");
 } else {

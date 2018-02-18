@@ -52,7 +52,7 @@ if($_config['maintenance']==1) api_err("under-maintenance");
 
 
 if(file_exists("tmp/db-update")){
-	
+
 	$res=unlink("tmp/db-update");
 	if($res){
 		echo "Updating db schema! Please refresh!\n";
@@ -64,7 +64,7 @@ if(file_exists("tmp/db-update")){
 
 if($_config['dbversion']<2) exit;
 
-if($_config['testnet']==true) $_config['coin'].="-testnet"; 
+if($_config['testnet']==true) $_config['coin'].="-testnet";
 
 $hostname=(!empty($_SERVER['HTTPS'])?'https':'http')."://".$_SERVER['HTTP_HOST'];
 
@@ -76,7 +76,7 @@ if(empty($_config['hostname'])||$_config['hostname']=="http://"||$_config['hostn
 
 
 	$t=time();
-	if($t-$_config['sanity_last']>$_config['sanity_interval']&& php_sapi_name() !== 'cli') system("php sanity.php &>>/dev/null &");
+	if($t-$_config['sanity_last']>$_config['sanity_interval']&& php_sapi_name() !== 'cli') system("php sanity.php > /dev/null 2>&1 &");
 
 
 ?>
