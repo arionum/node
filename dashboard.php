@@ -29,13 +29,21 @@ require_once("include/report-init.inc.php");
 
 $block=new Block;
 $current=$block->current();
-
+echo '<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/lumen/bootstrap.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>';
+echo '<body><div class="container"><div class="row">';
 echo "<h3>Arionum Node Worker Dashboard</h3>";
 echo "Current block: $current[height] <br><br> Current difficulty: ".$block->difficulty();
 
 echo "<hr/>";
 
-echo "<table>";
+echo "<table class=\"table table-striped table-bordered\">";
 
 echo "<thead><tr><td>Worker</td><td>Name</td><td>Last Report</td><td>Time Active</td><td>Hashes</td><td>H/s</td><td>Submits</td><td>Finds</td><td>Failures</td><td>Efficiency</td><td>Hash/Attempt</td></tr></thead><tbody>";
 
@@ -98,6 +106,7 @@ echo "<li><b>Hash/Attempt: </b><span style=\"font-size: larger;\">".number_forma
 
 
 echo "<script>setTimeout(function(){location.reload();}, 15000);</script>";
+echo "</div></div></body>"
 
 ?>
 
