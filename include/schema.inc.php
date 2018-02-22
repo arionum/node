@@ -1,5 +1,6 @@
 <?php
 
+// when db schema modifications are done, this function is run.
 
 $dbversion=intval($_config['dbversion']);
 $db->beginTransaction();
@@ -135,6 +136,7 @@ if($dbversion==5){
   $db->run("ALTER TABLE `peers` ADD `fails` TINYINT NOT NULL DEFAULT '0' AFTER `ip`; ");
   $dbversion++;
 }
+// update the db version to the latest one
 if($dbversion!=$_config['dbversion']) $db->run("UPDATE config SET val=:val WHERE cfg='dbversion'",array(":val"=>$dbversion));
 $db->commit();
 

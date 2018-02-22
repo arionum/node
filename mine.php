@@ -30,24 +30,27 @@ set_time_limit(360);
 $q=$_GET['q'];
 
 $ip=$_SERVER['REMOTE_ADDR'];
+// in case of testnet, all IPs are accepted for mining
 if($_config['testnet']==false&&!in_array($ip,$_config['allowed_hosts'])) api_err("unauthorized");
 
 if($q=="info"){
+	// provides the mining info to the miner
 	$diff=$block->difficulty();
 	$current=$block->current();
 	api_echo(array("difficulty"=>$diff, "block"=>$current['id'], "height"=>$current['height']));
 	exit;
 } elseif($q=="submitNonce"){
+	// in case the blocks are syncing, reject all
 	if($_config['sanity_sync']==1) api_err("sanity-sync");
 	$nonce = san($_POST['nonce']);
 	$argon=$_POST['argon'];
 	$public_key=san($_POST['public_key']);
 	$private_key=san($_POST['private_key']);
-	
+	// check if the miner won the block
 	$result=$block->mine($public_key, $nonce, $argon);
 
 	if($result) {
-			
+			// generate the new block
 			$res=$block->forge($nonce,$argon, $public_key, $private_key);
 			
 			
@@ -55,8 +58,9 @@ if($q=="info"){
 
 		
 		if($res){
+			//if the new block is generated, propagate it to all peers in background
 			$current=$block->current();
-			system("php propagate.php block $current[id] &>/dev/null &");
+			system("php propagate.php block $current[id]  > /dev/null 2>&1  &");
 			api_echo("accepted");
 		} 
 	}
