@@ -162,13 +162,13 @@ class Transaction {
 		// no future transactions
                 if($x['date']>time()+86400) { _log("$x[id] - Date in the future"); return false; }
                 // prevent the resending of broken base58 transactions
-		if($height>16890&&$x['date']<1519323683) return false;
+		if($height>16000&&$x['date']<1519326876) return false;
                 $id=$this->hash($x);	
         	// the hash does not match our regenerated hash
 	        if($x['id']!=$id) { 
-			// fix for broken base58 library which was used until block 17000, accepts hashes without the first 1 or 2 bytes
+			// fix for broken base58 library which was used until block 16900, accepts hashes without the first 1 or 2 bytes
 			$xs=base58_decode($x['id']);
-                        if(((strlen($xs)!=63||substr($id,1)!=$x['id'])&&(strlen($xs)!=62||substr($id,2)!=$x['id']))||$height>17000){
+                        if(((strlen($xs)!=63||substr($id,1)!=$x['id'])&&(strlen($xs)!=62||substr($id,2)!=$x['id']))||$height>16900){
                                  _log("$x[id] - $id - Invalid hash");
                                 return false;
                         }

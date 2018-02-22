@@ -16,8 +16,8 @@ public function add($height, $public_key, $nonce, $data, $date, $signature, $dif
 	
 	// create the hash / block id
 	$hash=$this->hash($generator, $height, $date, $nonce, $data, $signature, $difficulty, $argon);
-	//fix for the broken base58 library used until block 17000, trimming the first 0 bytes.
-	if($height<=17000) $hash=ltrim($hash,'1');
+	//fix for the broken base58 library used until block 16900, trimming the first 0 bytes.
+	if($height<16900) $hash=ltrim($hash,'1');
 	
 	$json=json_encode($data);
 
