@@ -1,4 +1,5 @@
 <?php
+// a simple wrapper for pdo
 class db extends PDO {
 
 

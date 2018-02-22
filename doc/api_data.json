@@ -1000,6 +1000,495 @@
     "groupTitle": "API"
   },
   {
+    "type": "php util.php",
+    "url": "balance",
+    "title": "Balance",
+    "name": "balance",
+    "group": "UTIL",
+    "description": "<p>Prints the balance of an address or a public key</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "text",
+            "optional": false,
+            "field": "arg2",
+            "description": "<p>address or public_key</p>"
+          }
+        ]
+      }
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php balance 5WuRMXGM7Pf8NqEArVz1NxgSBptkimSpvuSaYC79g1yo3RDQc8TjVtGH5chQWQV7CHbJEuq9DmW5fbmCEW4AghQr",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "Balance: 2,487",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "block",
+    "title": "Block",
+    "name": "block",
+    "group": "UTIL",
+    "description": "<p>Returns a specific block</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "text",
+            "optional": false,
+            "field": "arg2",
+            "description": "<p>block id</p>"
+          }
+        ]
+      }
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php block 4khstc1AknzDXg8h2v12rX42vDrzBaai6Rz53mbaBsghYN4DnfPhfG7oLZS24Q92MuusdYmwvDuiZiuHHWgdELLR",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "array(9) {\n [\"id\"]=>\n string(88) \"4khstc1AknzDXg8h2v12rX42vDrzBaai6Rz53mbaBsghYN4DnfPhfG7oLZS24Q92MuusdYmwvDuiZiuHHWgdELLR\"\n [\"generator\"]=>\n string(88) \"5ADfrJUnLefPsaYjMTR4KmvQ79eHo2rYWnKBRCXConYKYJVAw2adtzb38oUG5EnsXEbTct3p7GagT2VVZ9hfVTVn\"\n [\"height\"]=>\n int(16833)\n [\"date\"]=>\n int(1519312385)\n [\"nonce\"]=>\n string(41) \"EwtJ1EigKrLurlXROuuiozrR6ICervJDF2KFl4qEY\"\n [\"signature\"]=>\n string(97) \"AN1rKpqit8UYv6uvf79GnbjyihCPE1UZu4CGRx7saZ68g396yjHFmzkzuBV69Hcr7TF2egTsEwVsRA3CETiqXVqet58MCM6tu\"\n [\"difficulty\"]=>\n string(8) \"61982809\"\n [\"argon\"]=>\n string(68) \"$SfghIBNSHoOJDlMthVcUtg$WTJMrQWHHqDA6FowzaZJ+O9JC8DPZTjTxNE4Pj/ggwg\"\n [\"transactions\"]=>\n int(0)\n}",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "block-time",
+    "title": "Block-time",
+    "name": "block_time",
+    "group": "UTIL",
+    "description": "<p>Shows the block time of the last 100 blocks</p>",
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php block-time",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "16830 -> 323\n...\n16731 -> 302\nAverage block time: 217 seconds",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "blocks",
+    "title": "Blocks",
+    "name": "blocks",
+    "group": "UTIL",
+    "description": "<p>Prints the id and the height of the blocks &gt;=arg2, max 100 or arg3</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "number",
+            "optional": false,
+            "field": "arg2",
+            "description": "<p>Starting height</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "number",
+            "optional": true,
+            "field": "arg3",
+            "description": "<p>Block Limit</p>"
+          }
+        ]
+      }
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php blocks 10800 5",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "10801   2yAHaZ3ghNnThaNK6BJcup2zq7EXuFsruMb5qqXaHP9M6JfBfstAag1n1PX7SMKGcuYGZddMzU7hW87S5ZSayeKX\n10802   wNa4mRvRPCMHzsgLdseMdJCvmeBaCNibRJCDhsuTeznJh8C1aSpGuXRDPYMbqKiVtmGAaYYb9Ze2NJdmK1HY9zM\n10803   3eW3B8jCFBauw8EoKN4SXgrn33UBPw7n8kvDDpyQBw1uQcmJQEzecAvwBk5sVfQxUqgzv31JdNHK45JxUFcupVot\n10804   4mWK1f8ch2Ji3D6aw1BsCJavLNBhQgpUHBCHihnrLDuh8Bjwsou5bQDj7D7nV4RsEPmP2ZbjUUMZwqywpRc8r6dR\n10805   5RBeWXo2c9NZ7UF2ubztk53PZpiA4tsk3bhXNXbcBk89cNqorNj771Qu4kthQN5hXLtu1hzUnv7nkH33hDxBM34m",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "check-address",
+    "title": "Check-Address",
+    "name": "check_address",
+    "group": "UTIL",
+    "description": "<p>Checks a specific address for validity</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "text",
+            "optional": false,
+            "field": "arg2",
+            "description": "<p>block id</p>"
+          }
+        ]
+      }
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php check-address 4khstc1AknzDXg8h2v12rX42vDrzBaai6Rz53mbaBsghYN4DnfPhfG7oLZS24Q92MuusdYmwvDuiZiuHHWgdELLR",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "The address is valid",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "clean",
+    "title": "Clean",
+    "name": "clean",
+    "group": "UTIL",
+    "description": "<p>Cleans the entire database</p>",
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php clean",
+        "type": "cli"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "current",
+    "title": "Current",
+    "name": "current",
+    "group": "UTIL",
+    "description": "<p>Prints the current block in var_dump</p>",
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php current",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "array(9) {\n [\"id\"]=>\n string(88) \"4khstc1AknzDXg8h2v12rX42vDrzBaai6Rz53mbaBsghYN4DnfPhfG7oLZS24Q92MuusdYmwvDuiZiuHHWgdELLR\"\n [\"generator\"]=>\n string(88) \"5ADfrJUnLefPsaYjMTR4KmvQ79eHo2rYWnKBRCXConYKYJVAw2adtzb38oUG5EnsXEbTct3p7GagT2VVZ9hfVTVn\"\n [\"height\"]=>\n int(16833)\n [\"date\"]=>\n int(1519312385)\n [\"nonce\"]=>\n string(41) \"EwtJ1EigKrLurlXROuuiozrR6ICervJDF2KFl4qEY\"\n [\"signature\"]=>\n string(97) \"AN1rKpqit8UYv6uvf79GnbjyihCPE1UZu4CGRx7saZ68g396yjHFmzkzuBV69Hcr7TF2egTsEwVsRA3CETiqXVqet58MCM6tu\"\n [\"difficulty\"]=>\n string(8) \"61982809\"\n [\"argon\"]=>\n string(68) \"$SfghIBNSHoOJDlMthVcUtg$WTJMrQWHHqDA6FowzaZJ+O9JC8DPZTjTxNE4Pj/ggwg\"\n [\"transactions\"]=>\n int(0)\n}",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "delete-peer",
+    "title": "Delete-peer",
+    "name": "delete_peer",
+    "group": "UTIL",
+    "description": "<p>Removes a peer from the peerlist</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "text",
+            "optional": false,
+            "field": "arg2",
+            "description": "<p>Peer's hostname</p>"
+          }
+        ]
+      }
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php delete-peer http://peer1.arionum.com",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "Peer removed",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "get-address",
+    "title": "Get-Address",
+    "name": "get_address",
+    "group": "UTIL",
+    "description": "<p>Converts a public key into an address</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "text",
+            "optional": false,
+            "field": "arg2",
+            "description": "<p>public key</p>"
+          }
+        ]
+      }
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php get-address PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwQr8cE5s6APWAE1SWAmH6NM1nJTryBURULEsifA2hLVuW5GXFD1XU6s6REG1iPK7qGaRDkGpQwJjDhQKVoSVkSNp",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "5WuRMXGM7Pf8NqEArVz1NxgSBptkimSpvuSaYC79g1yo3RDQc8TjVtGH5chQWQV7CHbJEuq9DmW5fbmCEW4AghQr",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "mempool",
+    "title": "Mempool",
+    "name": "mempool",
+    "group": "UTIL",
+    "description": "<p>Prints the number of transactions in mempool</p>",
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php mempool",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "Mempool size: 12",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "peer",
+    "title": "Peer",
+    "name": "peer",
+    "group": "UTIL",
+    "description": "<p>Creates a peering session with another node</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "text",
+            "optional": false,
+            "field": "arg2",
+            "description": "<p>The Hostname of the other node</p>"
+          }
+        ]
+      }
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php peer http://peer1.arionum.com",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "Peering OK",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "peers",
+    "title": "Peers",
+    "name": "peers",
+    "group": "UTIL",
+    "description": "<p>Prints all the peers and their status</p>",
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php peers",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "http://35.190.160.142   active\n...\nhttp://aro.master.hashpi.com    active",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "peers-block",
+    "title": "Peers-Block",
+    "name": "peers_block",
+    "group": "UTIL",
+    "description": "<p>Prints the current height of all the peers</p>",
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php peers-block",
+        "type": "cli"
+      }
+    ],
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "http://peer5.arionum.com        16849\n...\nhttp://peer10.arionum.com        16849",
+          "type": "text"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "pop",
+    "title": "Pop",
+    "name": "pop",
+    "group": "UTIL",
+    "description": "<p>Cleans the entire database</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "arg2",
+            "description": "<p>Number of blocks to delete</p>"
+          }
+        ]
+      }
+    },
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php pop 1",
+        "type": "cli"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "recheck-blocks",
+    "title": "Recheck-Blocks",
+    "name": "recheck_blocks",
+    "group": "UTIL",
+    "description": "<p>Recheck all the blocks to make sure the blockchain is correct</p>",
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php recheck-blocks",
+        "type": "cli"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
     "success": {
       "fields": {
         "Success 200": [

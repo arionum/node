@@ -40,6 +40,8 @@ OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * @apiSuccess {String} status "ok" 
  * @apiSuccess {String} data The data provided by the api will be under this object.
+ * 
+ *
  *
  * @apiSuccessExample {json} Success-Response:
  *{
