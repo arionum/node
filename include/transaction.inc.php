@@ -162,7 +162,7 @@ class Transaction {
 		// no future transactions
                 if($x['date']>time()+86400) { _log("$x[id] - Date in the future"); return false; }
                 // prevent the resending of broken base58 transactions
-		if($height>17000&&$x['date']<1519319340) return false;
+		if($height>16890&&$x['date']<1519323683) return false;
                 $id=$this->hash($x);	
         	// the hash does not match our regenerated hash
 	        if($x['id']!=$id) { 
