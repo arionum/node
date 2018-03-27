@@ -160,6 +160,8 @@ if($total_peers==0&&$_config['testnet']==false){
 	foreach($f as $peer){
 		//peer with all until max_peers, this will ask them to send a peering request to our peer.php where we add their peer to the db.
 		$peer=trim($peer);
+		$bad_peers=array("127.0.0.1","localhost");
+		if(str_replace($bad_peers,"",$peer)!=$peer) continue;
 		$peer = filter_var($peer, FILTER_SANITIZE_URL);
         	if (!filter_var($peer, FILTER_VALIDATE_URL)) continue;
 		// store the hostname as md5 hash, for easier checking
@@ -377,6 +379,17 @@ if($current['height']<$largest_height&&$largest_height>1){
 }
 
 
+
+
+//rebroadcasting local transactions
+if($_config['sanity_rebroadcast_locals']==true){
+$r=$db->run("SELECT id FROM mempool WHERE height>=:current and peer='local' order by `height` asc LIMIT 20",array(":current"=>$current['height']));
+foreach($r as $x){
+        $x['id']=san($x['id']);
+        system("php propagate.php transaction $x[id]  > /dev/null 2>&1  &");
+        $db->run("UPDATE mempool SET height=:current WHERE id=:id",array(":id"=>$x['id'], ":current"=>$current['height']));
+}
+}
 
 //rebroadcasting transactions
 $forgotten=$current['height']-$_config['sanity_rebroadcast_height'];
