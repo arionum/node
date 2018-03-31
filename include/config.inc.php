@@ -32,4 +32,9 @@ $_config['sanity_interval']=900;
 $_config['allow_hostname_change']=false;
 // rebroadcast local transactions on each sanity
 $_config['sanity_rebroadcast_locals']=true;
+// write logs to file
+$_config['enable_logging']=false;
+// log file, should not be publicly viewable
+$_config['log_file']="/var/log/aro.log";
+
 ?>

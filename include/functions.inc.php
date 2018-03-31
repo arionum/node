@@ -21,10 +21,21 @@ function api_echo($data){
 }
 // log function, shows only in cli atm
 function _log($data){
-    $date=date("[Y-m-d H:s:]");
-    $trace=debug_backtrace(); 
-    $location=$trace[1]['class'].'->'.$trace[1]['function'].'()';
-	if(php_sapi_name() === 'cli') echo "$date [$location] $data\n";
+	$date=date("[Y-m-d H:s:]");
+	$trace=debug_backtrace(); 
+	$loc=count($trace)-1;
+	$file=substr($trace[$loc]['file'],strrpos($trace[$loc]['file'],"/")+1);
+	
+	$res="$date ".$file.":".$trace[$loc]['line'];
+	
+	if(!empty($trace[$loc]['class'])) $res.="---".$trace[$loc]['class'];
+	if(!empty($trace[$loc]['function'])&&$trace[$loc]['function']!='_log') $res.='->'.$trace[$loc]['function'].'()';
+	$res.=" $data \n";
+	if(php_sapi_name() === 'cli') echo $res;
+	global $_config;
+	if($_config['enable_logging']==true){
+		@file_put_contents($_config['log_file'],$res, FILE_APPEND);
+	}
 }
 
 // converts PEM key to hex
