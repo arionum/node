@@ -21,7 +21,7 @@ function api_echo($data){
 }
 // log function, shows only in cli atm
 function _log($data){
-	$date=date("[Y-m-d H:s:]");
+	$date=date("[Y-m-d H:i:s]");
 	$trace=debug_backtrace(); 
 	$loc=count($trace)-1;
 	$file=substr($trace[$loc]['file'],strrpos($trace[$loc]['file'],"/")+1);

@@ -122,6 +122,8 @@ elseif($q=="submitBlock"){
     $current=$block->current();
     // block already in the blockchain
     if($current['id']==$data['id']) api_echo("block-ok");
+    if($data['date']>time()+30) api_err("block in the future");
+
     if($current['height']==$data['height']&&$current['id']!=$data['id']){
         // different forks, same height
         $accept_new=false;
@@ -186,7 +188,7 @@ elseif($q=="submitBlock"){
     _log('['.$_SERVER['REMOTE_ADDR']."] block ok, repropagating - $data[height]");
 
     // send it to all our peers
-    system("php propagate.php block '$data[id]'  > /dev/null 2>&1  &");
+//    system("php propagate.php block '$data[id]'  > /dev/null 2>&1  &");
     api_echo("block-ok");
 }
 // return the current block, used in syncing

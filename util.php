@@ -303,7 +303,7 @@ elseif($cmd=="delete-peer"){
  * http://peer10.arionum.com        16849
  */
 elseif($cmd=="peers-block"){
-	$r=$db->run("SELECT * FROM peers");
+	$r=$db->run("SELECT * FROM peers WHERE blacklisted<UNIX_TIMESTAMP()");
         foreach($r as $x){
                 $a=peer_post($x['hostname']."/peer.php?q=currentBlock",array(),5);
 		$enc=base58_encode($x['hostname']);
