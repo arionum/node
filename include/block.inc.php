@@ -199,13 +199,13 @@ public function forge($nonce, $argon, $public_key, $private_key){
 	
 	//check the argon hash and the nonce to produce a valid block
 
-	if(!$this->mine($public_key,$nonce, $argon)) return false;
+	if(!$this->mine($public_key,$nonce, $argon)) { _log("Forge failed - Invalid argon"); return false; }
 
 	// the block's date timestamp must be bigger than the last block
 	$current=$this->current();
 	$height=$current['height']+=1;
 	$date=time();
-	if($date<=$current['date']) return 0;
+	if($date<=$current['date']) { _log("Forge failed - Date older than last block"); return false; }
 	
 	// get the mempool transactions
 	$txn=new Transaction;
@@ -231,7 +231,7 @@ public function forge($nonce, $argon, $public_key, $private_key){
 		
 	// add the block to the blockchain
 	$res=$this->add($height, $public_key, $nonce, $data, $date, $signature, $difficulty, $reward_signature, $argon);	
-	if(!$res) return false;
+	if(!$res) { _log("Forge failed - Block->Add() failed"); return false; }
 	return true;
 }
 
