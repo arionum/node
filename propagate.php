@@ -52,7 +52,10 @@ if((empty($peer)||$peer=='all')&&$type=="block"){
 	$res=file_put_contents("tmp/$id",$data);
 	if($res===false) die("Could not write the cache file");
 	// broadcasting to all peers
-	$r=$db->run("SELECT * FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0");
+	$ewhr="";
+	// boradcasting to only certain peers
+	if($linear==true) $ewhr=" ORDER by RAND() LIMIT 5";
+	$r=$db->run("SELECT * FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0 $ewhr");
 	foreach($r as $x) {
 		// encode the hostname in base58 and sanitize the IP to avoid any second order shell injections
 		$host=base58_encode($x['hostname']);

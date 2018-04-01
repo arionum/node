@@ -396,6 +396,9 @@ if($current['height']<$largest_height&&$largest_height>1){
 }
 
 
+// deleting mempool transactions older than 14 days
+$db->run("DELETE FROM `mempool` WHERE `date` < UNIX_TIMESTAMP()-(3600*24*14)");
+
 
 
 //rebroadcasting local transactions
