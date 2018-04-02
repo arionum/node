@@ -136,6 +136,11 @@ if($dbversion==5){
   $db->run("ALTER TABLE `peers` ADD `fails` TINYINT NOT NULL DEFAULT '0' AFTER `ip`; ");
   $dbversion++;
 }
+if($dbversion==6){
+  $db->run("ALTER TABLE `peers` ADD `stuckfail` TINYINT(4) NOT NULL DEFAULT '0' AFTER `fails`, ADD INDEX (`stuckfail`); ");
+  $db->run("ALTER TABLE `accounts` ADD `alias` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL AFTER `balance`; ");
+  $dbversion++;
+}
 // update the db version to the latest one
 if($dbversion!=$_config['dbversion']) $db->run("UPDATE config SET val=:val WHERE cfg='dbversion'",array(":val"=>$dbversion));
 $db->commit();

@@ -30,9 +30,10 @@ $block= new Block();
 $type=san($argv[1]);
 $id=san($argv[2]);
 $debug=false;
+$linear=false;
 // if debug mode, all data is printed to console, no background processes
 if(trim($argv[5])=='debug') $debug=true;
-
+if(trim($argv[5])=='linear') $linear=true;
 $peer=san(trim($argv[3]));
 
 
@@ -51,13 +52,17 @@ if((empty($peer)||$peer=='all')&&$type=="block"){
 	$res=file_put_contents("tmp/$id",$data);
 	if($res===false) die("Could not write the cache file");
 	// broadcasting to all peers
-	$r=$db->run("SELECT * FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0");
+	$ewhr="";
+	// boradcasting to only certain peers
+	if($linear==true) $ewhr=" ORDER by RAND() LIMIT 5";
+	$r=$db->run("SELECT * FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0 $ewhr");
 	foreach($r as $x) {
 		// encode the hostname in base58 and sanitize the IP to avoid any second order shell injections
 		$host=base58_encode($x['hostname']);
 		$ip=filter_var($x['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 		// fork a new process to send the blocks async
 		if($debug) system("php propagate.php '$type' '$id' '$host' '$ip' debug");
+		elseif($linear)  system("php propagate.php '$type' '$id' '$host' '$ip' linear");
 		else system("php propagate.php '$type' '$id' '$host' 'ip'  > /dev/null 2>&1  &");
 	}
 	exit;
@@ -80,7 +85,7 @@ if($type=="block"){
 	$hostname=base58_decode($peer);
 	// send the block as POST to the peer
 	echo "Block sent to $hostname:\n";
-	$response= peer_post($hostname."/peer.php?q=submitBlock",$data,60,$debug);
+	$response= peer_post($hostname."/peer.php?q=submitBlock",$data,60, $debug);
 	if($response=="block-ok") { echo "Block $i accepted. Exiting.\n"; exit;}
 	elseif($response['request']=="microsync"){
 		// the peer requested us to send more blocks, as it's behind

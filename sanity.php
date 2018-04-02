@@ -31,22 +31,28 @@ if(php_sapi_name() !== 'cli') die("This should only be run as cli");
 
 // make sure there's only a single sanity process running at the same time
 if(file_exists("tmp/sanity-lock")){
-
+	$ignore_lock=false;
+	if($argv[1]=="force"){
+		$res=intval(shell_exec("ps aux|grep sanity.php|grep -v grep|wc -l"));
+		if($res==1){
+			$ignore_lock=true;
+		}
+	}
 	$pid_time=filemtime("tmp/sanity-lock");
 	// if the process died, restart after 1day
 	if(time()-$pid_time>86400){
 		@unlink("tmp/sanity-lock");
 	}
-	die("Sanity lock in place");
+	if(!$ignore_lock) die("Sanity lock in place");
 } 
 // set the new sanity lock
 $lock = fopen("tmp/sanity-lock", "w");
 fclose($lock);
 $arg=trim($argv[1]);
 $arg2=trim($argv[2]);
-
-// sleep for 10 seconds to make sure there's a delay between starting the sanity and other processes
-if($arg!="microsanity") sleep(10);
+echo "Sleeping for 3 seconds\n";
+// sleep for 3 seconds to make sure there's a delay between starting the sanity and other processes
+if($arg!="microsanity") sleep(3);
 
 
 require_once("include/init.inc.php");
@@ -128,6 +134,8 @@ exit;
 $t=time();
 //if($t-$_config['sanity_last']<300) {@unlink("tmp/sanity-lock");  die("The sanity cron was already run recently"); }
 
+_log("Starting sanity");
+
 // update the last time sanity ran, to set the execution of the next run
 $db->run("UPDATE config SET val=:time WHERE cfg='sanity_last'",array(":time"=>$t));
 $block_peers=array();
@@ -142,9 +150,8 @@ $total_active_peers=0;
 // checking peers
 
 // delete the dead peers
-$db->run("DELETE from peers WHERE fails>100");
-
-$r=$db->run("SELECT id,hostname FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP()");
+$db->run("DELETE from peers WHERE fails>100 OR stuckfail>200");
+$r=$db->run("SELECT id,hostname,stuckfail,fails FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP()");
 
 $total_peers=count($r);
 
@@ -160,6 +167,8 @@ if($total_peers==0&&$_config['testnet']==false){
 	foreach($f as $peer){
 		//peer with all until max_peers, this will ask them to send a peering request to our peer.php where we add their peer to the db.
 		$peer=trim($peer);
+		$bad_peers=array("127.0.0.1","localhost");
+		if(str_replace($bad_peers,"",$peer)!=$peer) continue;
 		$peer = filter_var($peer, FILTER_SANITIZE_URL);
         	if (!filter_var($peer, FILTER_VALIDATE_URL)) continue;
 		// store the hostname as md5 hash, for easier checking
@@ -184,12 +193,14 @@ if($total_peers==0&&$_config['testnet']==false){
 
 // contact all the active peers
 foreach($r as $x){
+	_log("Contacting peer $x[hostname]");
 	$url=$x['hostname']."/peer.php?q=";
 	// get their peers list
-	$data=peer_post($url."getPeers");
+	$data=peer_post($url."getPeers",array(),5);
 	if($data===false) { 
+		_log("Peer $x[hostname] unresponsive");
 		// if the peer is unresponsive, mark it as failed and blacklist it for a while
-		$db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*60) WHERE id=:id",array(":id"=>$x['id']));		
+		$db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",array(":id"=>$x['id']));		
 		continue;
 	}
 	
@@ -200,6 +211,8 @@ foreach($r as $x){
 			// do not peer if we are already peered
         	        if($peered[$pid]==1) continue;
 	                $peered[$pid]=1;
+			$bad_peers=array("127.0.0.1","localhost");
+                	if(str_replace($bad_peers,"",$peer['hostname'])!=$peer['hostname']) continue;
 			// if it's our hostname, ignore
 			if($peer['hostname']==$_config['hostname']) continue;
 			// if invalid hostname, ignore
@@ -211,7 +224,8 @@ foreach($r as $x){
 					if($i>$_config['max_test_peers']) break;
 					$peer['hostname'] = filter_var($peer['hostname'], FILTER_SANITIZE_URL);
 					// peer with each one
-					$test=peer_post($peer['hostname']."/peer.php?q=peer",array("hostname"=>$_config['hostname']),20);
+					_log("Trying to peer with recommended peer: $peer[hostname]");
+					$test=peer_post($peer['hostname']."/peer.php?q=peer",array("hostname"=>$_config['hostname']),5);
 					if($test!==false){
 						 $total_peers++;
 						echo "Peered with: $peer[hostname]\n";
@@ -224,11 +238,16 @@ foreach($r as $x){
 	
 
 	// get the current block and check it's blockchain
-	$data=peer_post($url."currentBlock");
+	$data=peer_post($url."currentBlock",array(),5);
 	if($data===false) continue;
 	// peer was responsive, mark it as good
-	$db->run("UPDATE peers SET fails=0 WHERE id=:id",array(":id"=>$x['id']));		
-		
+	if($x['fails']>0) $db->run("UPDATE peers SET fails=0 WHERE id=:id",array(":id"=>$x['id']));		
+		if($data['height']<$current['height']-500) {
+			$db->run("UPDATE peers SET stuckfail=stuckfail+1, blacklisted=UNIX_TIMESTAMP()+7200 WHERE id=:id",array(":id"=>$x['id']));
+			continue;
+		} else {
+			if($x['stuckfail']>0) $db->run("UPDATE peers SET stuckfail=0 WHERE id=:id",array(":id"=>$x['id']));
+		}
 		$total_active_peers++;
 		// add the hostname and block relationship to an array
 		$block_peers[$data['id']][]=$x['hostname'];
@@ -296,7 +315,7 @@ if($current['height']<$largest_height&&$largest_height>1){
 	foreach($peers as $host){
 		_log("Starting to sync from $host"); 
 		$url=$host."/peer.php?q=";
-		$data=peer_post($url."getBlock",array("height"=>$current['height']));
+		$data=peer_post($url."getBlock",array("height"=>$current['height']),60);
 		// invalid data
 		if($data===false){ _log("Could not get block from $host - $current[height]");  continue; }
 		// if we're not on the same blockchain but the blockchain is most common with over 90% of the peers, delete the last 3 blocks and retry
@@ -377,10 +396,28 @@ if($current['height']<$largest_height&&$largest_height>1){
 }
 
 
+// deleting mempool transactions older than 14 days
+$db->run("DELETE FROM `mempool` WHERE `date` < UNIX_TIMESTAMP()-(3600*24*14)");
+
+
+
+//rebroadcasting local transactions
+if($_config['sanity_rebroadcast_locals']==true){
+$r=$db->run("SELECT id FROM mempool WHERE height>=:current and peer='local' order by `height` asc LIMIT 20",array(":current"=>$current['height']));
+_log("Rebroadcasting local transactions - ".count($r));
+foreach($r as $x){
+        $x['id']=san($x['id']);
+        system("php propagate.php transaction $x[id]  > /dev/null 2>&1  &");
+        $db->run("UPDATE mempool SET height=:current WHERE id=:id",array(":id"=>$x['id'], ":current"=>$current['height']));
+}
+}
 
 //rebroadcasting transactions
 $forgotten=$current['height']-$_config['sanity_rebroadcast_height'];
 $r=$db->run("SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",array(":forgotten"=>$forgotten));
+
+_log("Rebroadcasting external transactions - ".count($r));
+
 foreach($r as $x){
 	$x['id']=san($x['id']);
 	system("php propagate.php transaction $x[id]  > /dev/null 2>&1  &");
@@ -397,13 +434,20 @@ if($total_peers<$_config['max_peers']*0.7){
 //random peer check
 $r=$db->run("SELECT * FROM peers WHERE blacklisted<UNIX_TIMESTAMP() and reserve=1 LIMIT ".$_config['max_test_peers']);
 foreach($r as $x){
+	
 	$url=$x['hostname']."/peer.php?q=";
-	$data=peer_post($url."ping");
-	if($data===false) $db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*60) WHERE id=:id",array(":id"=>$x['id']));		
-	else $db->run("UPDATE peers SET fails=0 WHERE id=:id",array(":id"=>$x['id']));
+	$data=peer_post($url."ping",array(),5);
+	if($data===false){
+		 $db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*60) WHERE id=:id",array(":id"=>$x['id'])); 
+		_log("Random reserve peer test $x[hostname] -> FAILED");
+	}else{
+		_log("Random reserve peer test $x[hostname] -> OK");
+		 $db->run("UPDATE peers SET fails=0 WHERE id=:id",array(":id"=>$x['id']));
+	}
 }
 
 //clean tmp files
+_log("Cleaning tmp files");
 $f=scandir("tmp/");
 $time=time();
 foreach($f as $x){
@@ -415,6 +459,7 @@ foreach($f as $x){
 
 //recheck the last blocks
 if($_config['sanity_recheck_blocks']>0){
+_log("Rechecking blocks");
 	$blocks=array();
 	$all_blocks_ok=true;
 	$start=$current['height']-$_config['sanity_recheck_blocks'];
@@ -444,6 +489,7 @@ if($_config['sanity_recheck_blocks']>0){
 	if($all_blocks_ok) echo "All checked blocks are ok\n";
 }
 
+_log("Finishing sanity");
 
 @unlink("tmp/sanity-lock");
 ?>

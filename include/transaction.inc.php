@@ -200,6 +200,9 @@ class Transaction {
     public function get_transaction($id){
         global $db;
         $acc=new Account;
+        $block=new Block;
+        $current=$block->current();
+
         $x=$db->row("SELECT * FROM transactions WHERE id=:id",array(":id"=>$id));
        
 	    if(!$x) return false;
@@ -222,6 +225,8 @@ class Transaction {
    // return the transactions for a specific block id or height
    public function get_transactions($height="", $id=""){
         global $db;
+        $block=new Block;
+        $current=$block->current();
         $acc=new Account;
 	$height=san($height);
 	$id=san($id);

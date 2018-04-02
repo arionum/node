@@ -27,7 +27,6 @@ require_once("include/init.inc.php");
 $trx = new Transaction;
 $block=new Block;
 $q=$_GET['q'];
-
 // the data is sent as json, in $_POST['data']
 if(!empty($_POST['data'])){
     $data=json_decode(trim($_POST['data']),true);  
@@ -118,11 +117,13 @@ elseif($q=="submitBlock"){
     // receive a  new block from a peer
     
     // if sanity sync, refuse all
-    if($_config['sanity_sync']==1) api_err("sanity-sync");
+    if($_config['sanity_sync']==1){ _log('['.$_SERVER['REMOTE_ADDR']."] Block rejected due to sanity sync"); api_err("sanity-sync"); }
     $data['id']=san($data['id']);
     $current=$block->current();
     // block already in the blockchain
     if($current['id']==$data['id']) api_echo("block-ok");
+    if($data['date']>time()+30) api_err("block in the future");
+
     if($current['height']==$data['height']&&$current['id']!=$data['id']){
         // different forks, same height
         $accept_new=false;
@@ -139,10 +140,14 @@ elseif($q=="submitBlock"){
         }
         if($accept_new){
 	    // if the new block is accepted, run a microsanity to sync it
+	    _log('['.$_SERVER['REMOTE_ADDR']."] Starting microsanity - $data[height]"); 
             system("php sanity.php microsanity '$ip'  > /dev/null 2>&1  &");
             api_echo("microsanity");
 	
-        } else api_echo("reverse-microsanity"); // if it's not, suggest to the peer to get the block from us
+        } else {
+		 _log('['.$_SERVER['REMOTE_ADDR']."] suggesting reverse-microsanity - $data[height]"); 
+		 api_echo("reverse-microsanity"); // if it's not, suggest to the peer to get the block from us
+	}
     }
     // if it's not the next block
     if($current['height']!=$data['height']-1) {
@@ -151,26 +156,40 @@ elseif($q=="submitBlock"){
 		$pr=$db->row("SELECT * FROM peers WHERE ip=:ip",array(":ip"=>$ip));
 		if(!$pr) api_err("block-too-old");
 		$peer_host=base58_encode($pr['hostname']);
-		system("php propagate.php block current '$peer_host' '$pr[ip]'   > /dev/null 2>&1  &");	
+		system("php propagate.php block current '$peer_host' '$pr[ip]'   > /dev/null 2>&1  &");
+		_log('['.$_SERVER['REMOTE_ADDR']."] block too old, sending our current block - $data[height]");
+
 		api_err("block-too-old");
 	}
 	// if the block difference is bigger than 150, nothing should be done. They should sync via sanity
-        if($data['height']-$current['height']>150) api_err("block-out-of-sync");
+        if($data['height']-$current['height']>150) { 
+		_log('['.$_SERVER['REMOTE_ADDR']."] block-out-of-sync - $data[height]");  
+		api_err("block-out-of-sync"); 
+	}
 	// request them to send us a microsync with the latest blocks
+	_log('['.$_SERVER['REMOTE_ADDR']."] requesting microsync - $current[height] - $data[height]");
         api_echo(array("request"=>"microsync","height"=>$current['height'], "block"=>$current['id']));
         
     }
     // check block data
-    if(!$block->check($data)) api_err("invalid-block");
+    if(!$block->check($data)){
+	_log('['.$_SERVER['REMOTE_ADDR']."] invalid block - $data[height]");
+	 api_err("invalid-block"); 
+    }
     $b=$data;
     // add the block to the blockchain
     $res=$block->add($b['height'], $b['public_key'], $b['nonce'], $b['data'], $b['date'], $b['signature'], $b['difficulty'], $b['reward_signature'], $b['argon']);	
    
-    if(!$res) api_err("invalid-block-data");
-    api_echo("block-ok");
-    // send it to all our peers
-    system("php propagate.php block '$data[id]'  > /dev/null 2>&1  &");
+    if(!$res) {
+	_log('['.$_SERVER['REMOTE_ADDR']."] invalid block data - $data[height]");
+	api_err("invalid-block-data"); 
+    }
 
+    _log('['.$_SERVER['REMOTE_ADDR']."] block ok, repropagating - $data[height]");
+
+    // send it to all our peers
+    system("php propagate.php block '$data[id]' all all linear > /dev/null 2>&1  &");
+    api_echo("block-ok");
 }
 // return the current block, used in syncing
 elseif($q=="currentBlock"){
