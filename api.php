@@ -72,6 +72,8 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 require_once("include/init.inc.php");
 error_reporting(0);
 $ip=$_SERVER['REMOTE_ADDR'];
+$ip=filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+
 if($_config['public_api']==false&&!in_array($ip,$_config['allowed_hosts'])){
     api_err("private-api");
 }
