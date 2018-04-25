@@ -771,7 +771,7 @@ define({ "api": [
             "group": "Success 200",
             "type": "numeric",
             "optional": false,
-            "field": "confirmation",
+            "field": "confirmations",
             "description": "<p>Number of confirmations</p>"
           },
           {
