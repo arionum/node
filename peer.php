@@ -88,7 +88,7 @@ elseif($q=="ping"){
     // make sure the peer is not flooding us with transactions
     $res=$db->single("SELECT COUNT(1) FROM mempool WHERE src=:src",array(":src"=>$data['src']));
     if($res>25) api_err("Too many transactions from this address in mempool. Please rebroadcast later.");
-    $res=$db->single("SELECT COUNT(1) FROM mempool WHERE peer=:peer",array(":peer"=>$_SERVER['REMOTE_ADDR']));
+    $res=$db->single("SELECT COUNT(1) FROM mempool WHERE peer=:peer",array(":peer"=>$ip));
     if($res>$_config['peer_max_mempool']) api_error("Too many transactions broadcasted from this peer");
     
     
@@ -106,7 +106,7 @@ elseif($q=="ping"){
     if($balance-$memspent<$val+$fee) api_err("Not enough funds (mempool)");
 
     // add to mempool
-    $trx->add_mempool($data, $_SERVER['REMOTE_ADDR']);
+    $trx->add_mempool($data, $ip);
    
     // rebroadcast the transaction to some peers unless the transaction is smaller than the average size of transactions in mempool - protect against garbage data flooding
     $res=$db->row("SELECT COUNT(1) as c, sum(val) as v FROM  mempool ",array(":src"=>$data['src']));
@@ -117,7 +117,7 @@ elseif($q=="submitBlock"){
     // receive a  new block from a peer
     
     // if sanity sync, refuse all
-    if($_config['sanity_sync']==1){ _log('['.$_SERVER['REMOTE_ADDR']."] Block rejected due to sanity sync"); api_err("sanity-sync"); }
+    if($_config['sanity_sync']==1){ _log('['.$ip."] Block rejected due to sanity sync"); api_err("sanity-sync"); }
     $data['id']=san($data['id']);
     $current=$block->current();
     // block already in the blockchain
@@ -140,12 +140,12 @@ elseif($q=="submitBlock"){
         }
         if($accept_new){
 	    // if the new block is accepted, run a microsanity to sync it
-	    _log('['.$_SERVER['REMOTE_ADDR']."] Starting microsanity - $data[height]"); 
+	    _log('['.$ip."] Starting microsanity - $data[height]"); 
             system("php sanity.php microsanity '$ip'  > /dev/null 2>&1  &");
             api_echo("microsanity");
 	
         } else {
-		 _log('['.$_SERVER['REMOTE_ADDR']."] suggesting reverse-microsanity - $data[height]"); 
+		 _log('['.$ip."] suggesting reverse-microsanity - $data[height]"); 
 		 api_echo("reverse-microsanity"); // if it's not, suggest to the peer to get the block from us
 	}
     }
@@ -156,24 +156,25 @@ elseif($q=="submitBlock"){
 		$pr=$db->row("SELECT * FROM peers WHERE ip=:ip",array(":ip"=>$ip));
 		if(!$pr) api_err("block-too-old");
 		$peer_host=base58_encode($pr['hostname']);
+		$pr['ip']=escapeshellcmd($pr['ip']);
 		system("php propagate.php block current '$peer_host' '$pr[ip]'   > /dev/null 2>&1  &");
-		_log('['.$_SERVER['REMOTE_ADDR']."] block too old, sending our current block - $data[height]");
+		_log('['.$ip."] block too old, sending our current block - $data[height]");
 
 		api_err("block-too-old");
 	}
 	// if the block difference is bigger than 150, nothing should be done. They should sync via sanity
         if($data['height']-$current['height']>150) { 
-		_log('['.$_SERVER['REMOTE_ADDR']."] block-out-of-sync - $data[height]");  
+		_log('['.$ip."] block-out-of-sync - $data[height]");  
 		api_err("block-out-of-sync"); 
 	}
 	// request them to send us a microsync with the latest blocks
-	_log('['.$_SERVER['REMOTE_ADDR']."] requesting microsync - $current[height] - $data[height]");
+	_log('['.$ip."] requesting microsync - $current[height] - $data[height]");
         api_echo(array("request"=>"microsync","height"=>$current['height'], "block"=>$current['id']));
         
     }
     // check block data
     if(!$block->check($data)){
-	_log('['.$_SERVER['REMOTE_ADDR']."] invalid block - $data[height]");
+	_log('['.$ip."] invalid block - $data[height]");
 	 api_err("invalid-block"); 
     }
     $b=$data;
@@ -181,11 +182,11 @@ elseif($q=="submitBlock"){
     $res=$block->add($b['height'], $b['public_key'], $b['nonce'], $b['data'], $b['date'], $b['signature'], $b['difficulty'], $b['reward_signature'], $b['argon']);	
    
     if(!$res) {
-	_log('['.$_SERVER['REMOTE_ADDR']."] invalid block data - $data[height]");
+	_log('['.$ip."] invalid block data - $data[height]");
 	api_err("invalid-block-data"); 
     }
 
-    _log('['.$_SERVER['REMOTE_ADDR']."] block ok, repropagating - $data[height]");
+    _log('['.$ip."] block ok, repropagating - $data[height]");
 
     // send it to all our peers
     system("php propagate.php block '$data[id]' all all linear > /dev/null 2>&1  &");

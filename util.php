@@ -303,12 +303,17 @@ elseif($cmd=="delete-peer"){
  * http://peer10.arionum.com        16849
  */
 elseif($cmd=="peers-block"){
+	$only_diff=false;
+	if($argv[2]=="diff"){
+		$current=$db->single("SELECT height FROM blocks ORDER by height DESC LIMIT 1");
+		$only_diff=true;
+	}
 	$r=$db->run("SELECT * FROM peers WHERE blacklisted<UNIX_TIMESTAMP()");
         foreach($r as $x){
                 $a=peer_post($x['hostname']."/peer.php?q=currentBlock",array(),5);
 		$enc=base58_encode($x['hostname']);
 		if($argv[2]=="debug") echo "$enc\t";
-		echo "$x[hostname]\t$a[height]\n";
+		if($only_diff==false||$current!=$a['height']) echo "$x[hostname]\t$a[height]\n";
 
         }
 }
