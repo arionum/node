@@ -29,7 +29,7 @@ $acc=new Account();
 set_time_limit(360);
 $q=$_GET['q'];
 
-$ip=$_SERVER['REMOTE_ADDR'];
+$ip=san_ip($_SERVER['REMOTE_ADDR']);
 $ip=filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 
 // in case of testnet, all IPs are accepted for mining

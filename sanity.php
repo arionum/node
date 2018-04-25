@@ -81,6 +81,8 @@ do {
 	$data=peer_post($url."getBlock",array("height"=>$current['height']));
 	
 	if(!$data) {echo "Invalid getBlock result\n"; break; }
+	$data['id']=san($data['id']);
+	$data['height']=san($data['height']);
 	// nothing to be done, same blockchain
 	if($data['id']==$current['id']) {echo "Same block\n"; break;}
 
@@ -166,8 +168,8 @@ if($total_peers==0&&$_config['testnet']==false){
 	if(count($f)<2){ @unlink("tmp/sanity-lock"); die("Could nto connect to arionum.com! Will try later!\n"); }
 	foreach($f as $peer){
 		//peer with all until max_peers, this will ask them to send a peering request to our peer.php where we add their peer to the db.
-		$peer=trim($peer);
-		$bad_peers=array("127.0.0.1","localhost");
+		$peer=trim(san_host($peer));
+		$bad_peers=array("127.0.0.1","localhost","10.0.0","192.168.0");
 		if(str_replace($bad_peers,"",$peer)!=$peer) continue;
 		$peer = filter_var($peer, FILTER_SANITIZE_URL);
         	if (!filter_var($peer, FILTER_VALIDATE_URL)) continue;
@@ -207,11 +209,13 @@ foreach($r as $x){
 		$i=0;
 		foreach($data as $peer){
 			// store the hostname as md5 hash, for easier checking
+			$peer['hostname']=san_host($peer['hostname']);
+			$peer['ip']=san_ip($peer['ip']);
 			$pid=md5($peer['hostname']);
 			// do not peer if we are already peered
         	        if($peered[$pid]==1) continue;
 	                $peered[$pid]=1;
-			$bad_peers=array("127.0.0.1","localhost");
+			$bad_peers=array("127.0.0.1","localhost","10.0.0.","192.168.0.");
                 	if(str_replace($bad_peers,"",$peer['hostname'])!=$peer['hostname']) continue;
 			// if it's our hostname, ignore
 			if($peer['hostname']==$_config['hostname']) continue;
@@ -242,6 +246,9 @@ foreach($r as $x){
 	if($data===false) continue;
 	// peer was responsive, mark it as good
 	if($x['fails']>0) $db->run("UPDATE peers SET fails=0 WHERE id=:id",array(":id"=>$x['id']));		
+		$data['id']=san($data['id']);
+		$data['height']=san($data['height']);
+
 		if($data['height']<$current['height']-500) {
 			$db->run("UPDATE peers SET stuckfail=stuckfail+1, blacklisted=UNIX_TIMESTAMP()+7200 WHERE id=:id",array(":id"=>$x['id']));
 			continue;
@@ -318,6 +325,9 @@ if($current['height']<$largest_height&&$largest_height>1){
 		$data=peer_post($url."getBlock",array("height"=>$current['height']),60);
 		// invalid data
 		if($data===false){ _log("Could not get block from $host - $current[height]");  continue; }
+                $data['id']=san($data['id']);
+                $data['height']=san($data['height']);
+
 		// if we're not on the same blockchain but the blockchain is most common with over 90% of the peers, delete the last 3 blocks and retry
 		if($data['id']!=$current['id']&&$data['id']==$most_common&&($most_common_size/$total_active_peers)>0.90){
 			$block->delete($current['height']-3);
@@ -369,6 +379,9 @@ if($current['height']<$largest_height&&$largest_height>1){
 			if($data===false){_log("Could not get blocks from $host - height: $current[height]");  break; }
 			$good_peer=true;
 			foreach($data as $b){
+                		$b['id']=san($b['id']);
+                		$b['height']=san($b['height']);
+
 				if(!$block->check($b)){
 					_log("Block check: could not add block - $b[id] - $b[height]");
 					$good_peer=false; 

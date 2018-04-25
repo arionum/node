@@ -7,6 +7,17 @@ function san($a,$b=""){
     
     return $a;
 }
+
+function san_ip($a){
+	$a = preg_replace("/[^a-fA-F0-9\[\]\.\:]/", "", $a);
+	return $a;
+}
+
+function san_host($a){
+	$a = preg_replace("/[^a-zA-Z0-9\.\-\:\/]/", "", $a);
+	return $a;
+}
+
 // api  error and exit 
 function api_err($data){
     global $_config;

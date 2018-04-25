@@ -1,6 +1,6 @@
 <?php
 // ARO version
-define("VERSION", "0.2b");
+define("VERSION", "0.3.0");
 // Amsterdam timezone by default, should probably be moved to config
 date_default_timezone_set("Europe/Amsterdam");
 
@@ -73,7 +73,7 @@ if($_config['dbversion']<2) exit;
 if($_config['testnet']==true) $_config['coin'].="-testnet"; 
 
 // current hostname
-$hostname=(!empty($_SERVER['HTTPS'])?'https':'http')."://".$_SERVER['HTTP_HOST'];
+$hostname=(!empty($_SERVER['HTTPS'])?'https':'http')."://".san_host($_SERVER['HTTP_HOST']);
 // set the hostname to the current one
 if($hostname!=$_config['hostname']&&$_SERVER['HTTP_HOST']!="localhost"&&$_SERVER['HTTP_HOST']!="127.0.0.1"&&$_SERVER['hostname']!='::1'&&php_sapi_name() !== 'cli' && ($_config['allow_hostname_change']!=false||empty($_config['hostname']))){
 	$db->run("UPDATE config SET val=:hostname WHERE cfg='hostname' LIMIT 1",array(":hostname"=>$hostname));

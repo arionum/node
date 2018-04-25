@@ -34,7 +34,7 @@ if(!empty($_POST['data'])){
 
 // make sure it's the same coin and not testnet
 if($_POST['coin']!=$_config['coin']) api_err("Invalid coin");
-$ip=$_SERVER['REMOTE_ADDR'];
+$ip=san_ip($_SERVER['REMOTE_ADDR']);
 $ip=filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 
 // peer with the current node
@@ -43,7 +43,7 @@ if($q=="peer"){
     $hostname = filter_var($data['hostname'], FILTER_SANITIZE_URL);
     
     if (!filter_var($hostname, FILTER_VALIDATE_URL)) api_err("invalid-hostname");
-   
+    $hostname=san_host($hostname);   
     // if it's already peered, only repeer on request
     $res=$db->single("SELECT COUNT(1) FROM peers WHERE hostname=:hostname AND ip=:ip",array(":hostname"=>$hostname,":ip"=>$ip));
     if($res==1){
@@ -156,7 +156,7 @@ elseif($q=="submitBlock"){
 		$pr=$db->row("SELECT * FROM peers WHERE ip=:ip",array(":ip"=>$ip));
 		if(!$pr) api_err("block-too-old");
 		$peer_host=base58_encode($pr['hostname']);
-		$pr['ip']=escapeshellcmd($pr['ip']);
+		$pr['ip']=escapeshellcmd(san_ip($pr['ip']));
 		system("php propagate.php block current '$peer_host' '$pr[ip]'   > /dev/null 2>&1  &");
 		_log('['.$ip."] block too old, sending our current block - $data[height]");
 
