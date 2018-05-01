@@ -30,7 +30,7 @@ set_time_limit(360);
 $q=$_GET['q'];
 
 $ip=san_ip($_SERVER['REMOTE_ADDR']);
-$ip=filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+$ip=filter_var($ip, FILTER_VALIDATE_IP);
 
 // in case of testnet, all IPs are accepted for mining
 if($_config['testnet']==false&&!in_array($ip,$_config['allowed_hosts'])&&!empty($ip)&&!in_array('*',$_config['allowed_hosts'])) api_err("unauthorized");
