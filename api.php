@@ -319,7 +319,7 @@ elseif($q=="getTransactions"){
  * @apiParam {string} [block] Block id
  *
  * @apiSuccess {string} block  Block ID
- * @apiSuccess {numeric} confirmation Number of confirmations
+ * @apiSuccess {numeric} confirmations Number of confirmations
  * @apiSuccess {numeric} date  Transaction's date in UNIX TIMESTAMP format
  * @apiSuccess {string} dst  Transaction destination
  * @apiSuccess {numeric} fee  The transaction's fee
