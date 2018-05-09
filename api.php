@@ -482,6 +482,37 @@ elseif($q=="getTransactions"){
     $res=$db->single("SELECT COUNT(1) FROM mempool");
     api_echo($res);
 
+} elseif($q=='randomNumber'){
+/**
+ * @api {get} /api.php?q=randomNumber 16. randomNumber
+ * @apiName randomNumber
+ * @apiGroup API
+ * @apiDescription Returns a random number based on an ARO block id.
+ *
+ * @apiParam {numeric} height The height of the block on which the random number will be based on (should be a future block when starting)
+ * @apiParam {numeric} min Minimum number (default 1)
+ * @apiParam {numeric} max Maximum number
+ * @apiParam {string} seed A seed to generate different numbers for each use cases.
+ * @apiSuccess {numeric} data  The random number
+ */
+
+    $height=san($_GET['height']);
+    $max=intval($_GET['max']);
+    if(empty($_GET['min'])) $min=1;
+    else $min=intval($_GET['min']);
+    
+    $blk=$db->single("SELECT id FROM blocks WHERE height=:h",array(":h"=>$height));
+    if($blk===false) api_err("Unknown block. Future?");
+    $base=hash("sha256",$blk.$_GET['seed']);
+
+    $seed1=hexdec(substr($base,0,12));
+    // generate random numbers based on the seed
+    mt_srand($seed1,MT_RAND_MT19937 );
+    $res=mt_rand($min, $max);
+    api_echo($res);
+
+
+
 } else {
      api_err("Invalid request");
  }

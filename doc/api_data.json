@@ -420,7 +420,7 @@
             "group": "Success 200",
             "type": "numeric",
             "optional": false,
-            "field": "confirmation",
+            "field": "confirmations",
             "description": "<p>Number of confirmations</p>"
           },
           {
@@ -881,6 +881,64 @@
             "optional": false,
             "field": "data",
             "description": "<p>Number of mempool transactions</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "./api.php",
+    "groupTitle": "API"
+  },
+  {
+    "type": "get",
+    "url": "/api.php?q=randomNumber",
+    "title": "16. randomNumber",
+    "name": "randomNumber",
+    "group": "API",
+    "description": "<p>Returns a random number based on an ARO block id.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "numeric",
+            "optional": false,
+            "field": "height",
+            "description": "<p>The height of the block on which the random number will be based on (should be a future block when starting)</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "numeric",
+            "optional": false,
+            "field": "min",
+            "description": "<p>Minimum number (default 1)</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "numeric",
+            "optional": false,
+            "field": "max",
+            "description": "<p>Maximum number</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": false,
+            "field": "seed",
+            "description": "<p>A seed to generate different numbers for each use cases.</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "numeric",
+            "optional": false,
+            "field": "data",
+            "description": "<p>The random number</p>"
           }
         ]
       }
