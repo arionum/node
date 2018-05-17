@@ -1,44 +1,33 @@
 # node
 
-Arionum (ARO) cryptocurrency node
+The Arionum (ARO) cryptocurrency node.
 
------------------------------------------------------
-Block 10800 Hard fork - Code name: Resistance
+## Install
 
-In order to increase the fairness of Arionum and stay true to the inital claim of being a cpu coin, we will be changing the mining algorithm starting the block 10800.
+**Requirements:**
 
-The new mining alghoritm uses:
+- PHP 7.2
+  - PDO extension
+  - GMP extension
+  - BCMath extension
+- MySQL/MariaDB
 
-threads=1
-
-memory=524288
-
-time=1
-
-Also, starting block 10800, the maximum transaction fee will be 10 ARO.
-
------------------------------------------------------
-
-Requires php 7.2, mysql/mariadb, php-pdo, php-bcmath and php-gmp
-
-This app should only be run in the main directory of the domain/subdomain, ex: http://111.111.111.111/
-
-The node should have a public IP and be accessible over internet. 
-
-Installation:
 1. Install MySQL or MariaDB and create a database and a user.
-
-2. Edit include/config.inc.php and set the DB login data
-
-3. Change permissions to tmp and tmp/db-update to 777 (chmod 777 tmp -R)
-
+2. Edit `include/config.inc.php` and set the DB login data
+3. Change permissions to tmp and `tmp/db-update` to 777 (`chmod 777 tmp -R`)
 4. Access the http://ip-or-domain and refresh once
 
-Official website: https://www.arionum.com
+## Usage
 
-Block explorer: https://arionum.info
+This app should only be run in the main directory of the domain/subdomain, ex: http://111.111.111.111
 
-Forums: https://forum.arionum.com
+The node should have a public IP and be accessible over internet.
+
+## Links
+
+- Official website: https://www.arionum.com
+- Block explorer: https://arionum.info
+- Forums: https://forum.arionum.com
 
 ## Development Fund
 
