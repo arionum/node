@@ -39,7 +39,10 @@ if($q=="info"){
 	// provides the mining info to the miner
 	$diff=$block->difficulty();
 	$current=$block->current();
-	api_echo(array("difficulty"=>$diff, "block"=>$current['id'], "height"=>$current['height']));
+
+	$res=array("difficulty"=>$diff, "block"=>$current['id'], "height"=>$current['height']);
+	if($_config['testnet']) $res['testnet']=true;
+	api_echo($res);
 	exit;
 } elseif($q=="submitNonce"){
 	// in case the blocks are syncing, reject all
