@@ -40,8 +40,7 @@ if($q=="info"){
 	$diff=$block->difficulty();
 	$current=$block->current();
 
-	$res=array("difficulty"=>$diff, "block"=>$current['id'], "height"=>$current['height']);
-	if($_config['testnet']) $res['testnet']=true;
+	$res=array("difficulty"=>$diff, "block"=>$current['id'], "height"=>$current['height'], "testnet"=>$_config['testnet']);
 	api_echo($res);
 	exit;
 } elseif($q=="submitNonce"){
