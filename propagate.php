@@ -152,7 +152,7 @@ if ($type == "block") {
 }
 // broadcast a transaction to some peers
 if ($type == "transaction") {
-    $trx = new Transaction;
+    $trx = new Transaction();
     // get the transaction data
     $data = $trx->export($id);
 

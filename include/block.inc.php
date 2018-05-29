@@ -5,8 +5,8 @@ class Block
     public function add($height, $public_key, $nonce, $data, $date, $signature, $difficulty, $reward_signature, $argon)
     {
         global $db;
-        $acc = new Account;
-        $trx = new Transaction;
+        $acc = new Account();
+        $trx = new Transaction();
 
         $generator = $acc->get_address($public_key);
 
@@ -232,7 +232,7 @@ class Block
             _log("Invalid block argon - $data[argon]");
             return false;
         }
-        $acc = new Account;
+        $acc = new Account();
         // generator's public key must be valid
 
         if (!$acc->valid_key($data['public_key'])) {
@@ -274,12 +274,12 @@ class Block
         }
 
         // get the mempool transactions
-        $txn = new Transaction;
+        $txn = new Transaction();
         $data = $txn->mempool($this->max_transactions());
 
 
         $difficulty = $this->difficulty();
-        $acc = new Account;
+        $acc = new Account();
         $generator = $acc->get_address($public_key);
 
         // always sort  the transactions in the same way
@@ -397,8 +397,8 @@ class Block
         if ($data === false) {
             return false;
         }
-        $acc = new Account;
-        $trx = new Transaction;
+        $acc = new Account();
+        $trx = new Transaction();
         // no transactions means all are valid
         if (count($data) == 0) {
             return true;
@@ -503,7 +503,7 @@ class Block
             $height = 2;
         }
         global $db;
-        $trx = new Transaction;
+        $trx = new Transaction();
 
         $r = $db->run("SELECT * FROM blocks WHERE height>=:height ORDER by height DESC", [":height" => $height]);
 
@@ -538,7 +538,7 @@ class Block
     {
 
         global $db;
-        $trx = new Transaction;
+        $trx = new Transaction();
 
         $x = $db->row("SELECT * FROM blocks WHERE id=:id", [":id" => $id]);
 
@@ -599,7 +599,7 @@ class Block
         }
 
         global $db;
-        $trx = new Transaction;
+        $trx = new Transaction();
         if (!empty($height)) {
             $block = $db->row("SELECT * FROM blocks WHERE height=:height", [":height" => $height]);
         } else {

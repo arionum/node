@@ -79,8 +79,10 @@ $microsanity = false;
 if ($arg == "microsanity" && !empty($arg2)) {
     do {
         // the microsanity runs only against 1 specific peer
-        $x = $db->row("SELECT id,hostname FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP() AND ip=:ip",
-            [":ip" => $arg2]);
+        $x = $db->row(
+            "SELECT id,hostname FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP() AND ip=:ip",
+            [":ip" => $arg2]
+        );
 
         if (!$x) {
             echo "Invalid node - $arg2\n";
@@ -118,8 +120,14 @@ if ($arg == "microsanity" && !empty($arg2)) {
         // make sure the block is valid
         $prev = $block->get($current['height'] - 1);
         $public = $acc->public_key($data['generator']);
-        if (!$block->mine($public, $data['nonce'], $data['argon'], $block->difficulty($current['height'] - 1),
-            $prev['id'], $prev['height'])) {
+        if (!$block->mine(
+            $public,
+            $data['nonce'],
+            $data['argon'],
+            $block->difficulty($current['height'] - 1),
+            $prev['id'],
+            $prev['height']
+        )) {
             echo "Invalid prev-block\n";
             break;
         }
@@ -134,8 +142,17 @@ if ($arg == "microsanity" && !empty($arg2)) {
         // add the new block
         echo "Starting to sync last block from $x[hostname]\n";
         $b = $data;
-        $res = $block->add($b['height'], $b['public_key'], $b['nonce'], $b['data'], $b['date'], $b['signature'],
-            $b['difficulty'], $b['reward_signature'], $b['argon']);
+        $res = $block->add(
+            $b['height'],
+            $b['public_key'],
+            $b['nonce'],
+            $b['data'],
+            $b['date'],
+            $b['signature'],
+            $b['difficulty'],
+            $b['reward_signature'],
+            $b['argon']
+        );
         if (!$res) {
             _log("Block add: could not add block - $b[id] - $b[height]");
 
@@ -234,8 +251,10 @@ foreach ($r as $x) {
     if ($data === false) {
         _log("Peer $x[hostname] unresponsive");
         // if the peer is unresponsive, mark it as failed and blacklist it for a while
-        $db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
-            [":id" => $x['id']]);
+        $db->run(
+            "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
+            [":id" => $x['id']]
+        );
         continue;
     }
 
@@ -263,8 +282,10 @@ foreach ($r as $x) {
             continue;
         }
         // make sure there's no peer in db with this ip or hostname
-        if (!$db->single("SELECT COUNT(1) FROM peers WHERE ip=:ip or hostname=:hostname",
-            [":ip" => $peer['ip'], ":hostname" => $peer['hostname']])) {
+        if (!$db->single(
+            "SELECT COUNT(1) FROM peers WHERE ip=:ip or hostname=:hostname",
+            [":ip" => $peer['ip'], ":hostname" => $peer['hostname']]
+        )) {
             $i++;
             // check a max_test_peers number of peers from each peer
             if ($i > $_config['max_test_peers']) {
@@ -295,8 +316,10 @@ foreach ($r as $x) {
     $data['height'] = san($data['height']);
 
     if ($data['height'] < $current['height'] - 500) {
-        $db->run("UPDATE peers SET stuckfail=stuckfail+1, blacklisted=UNIX_TIMESTAMP()+7200 WHERE id=:id",
-            [":id" => $x['id']]);
+        $db->run(
+            "UPDATE peers SET stuckfail=stuckfail+1, blacklisted=UNIX_TIMESTAMP()+7200 WHERE id=:id",
+            [":id" => $x['id']]
+        );
         continue;
     } else {
         if ($x['stuckfail'] > 0) {
@@ -418,8 +441,14 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                 }
                 // check if the block mining data is correct
                 for ($i = $last_good + 1; $i <= $largest_height; $i++) {
-                    if (!$block->mine($cblock[$i]['public_key'], $cblock[$i]['nonce'], $cblock[$i]['argon'],
-                        $cblock[$i]['difficulty'], $cblock[$i - 1]['id'], $cblock[$i - 1]['height'])) {
+                    if (!$block->mine(
+                        $cblock[$i]['public_key'],
+                        $cblock[$i]['nonce'],
+                        $cblock[$i]['argon'],
+                        $cblock[$i]['difficulty'],
+                        $cblock[$i - 1]['id'],
+                        $cblock[$i - 1]['height']
+                    )) {
                         $invalid = true;
                         break;
                     }
@@ -454,8 +483,17 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                     $good_peer = false;
                     break;
                 }
-                $res = $block->add($b['height'], $b['public_key'], $b['nonce'], $b['data'], $b['date'], $b['signature'],
-                    $b['difficulty'], $b['reward_signature'], $b['argon']);
+                $res = $block->add(
+                    $b['height'],
+                    $b['public_key'],
+                    $b['nonce'],
+                    $b['data'],
+                    $b['date'],
+                    $b['signature'],
+                    $b['difficulty'],
+                    $b['reward_signature'],
+                    $b['argon']
+                );
                 if (!$res) {
                     _log("Block add: could not add block - $b[id] - $b[height]");
                     $good_peer = false;
@@ -483,21 +521,27 @@ $db->run("DELETE FROM `mempool` WHERE `date` < UNIX_TIMESTAMP()-(3600*24*14)");
 
 //rebroadcasting local transactions
 if ($_config['sanity_rebroadcast_locals'] == true) {
-    $r = $db->run("SELECT id FROM mempool WHERE height>=:current and peer='local' order by `height` asc LIMIT 20",
-        [":current" => $current['height']]);
+    $r = $db->run(
+        "SELECT id FROM mempool WHERE height>=:current and peer='local' order by `height` asc LIMIT 20",
+        [":current" => $current['height']]
+    );
     _log("Rebroadcasting local transactions - ".count($r));
     foreach ($r as $x) {
         $x['id'] = san($x['id']);
         system("php propagate.php transaction $x[id]  > /dev/null 2>&1  &");
-        $db->run("UPDATE mempool SET height=:current WHERE id=:id",
-            [":id" => $x['id'], ":current" => $current['height']]);
+        $db->run(
+            "UPDATE mempool SET height=:current WHERE id=:id",
+            [":id" => $x['id'], ":current" => $current['height']]
+        );
     }
 }
 
 //rebroadcasting transactions
 $forgotten = $current['height'] - $_config['sanity_rebroadcast_height'];
-$r = $db->run("SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",
-    [":forgotten" => $forgotten]);
+$r = $db->run(
+    "SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",
+    [":forgotten" => $forgotten]
+);
 
 _log("Rebroadcasting external transactions - ".count($r));
 
@@ -520,8 +564,10 @@ foreach ($r as $x) {
     $url = $x['hostname']."/peer.php?q=";
     $data = peer_post($url."ping", [], 5);
     if ($data === false) {
-        $db->run("UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*60) WHERE id=:id",
-            [":id" => $x['id']]);
+        $db->run(
+            "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*60) WHERE id=:id",
+            [":id" => $x['id']]
+        );
         _log("Random reserve peer test $x[hostname] -> FAILED");
     } else {
         _log("Random reserve peer test $x[hostname] -> OK");
@@ -564,8 +610,14 @@ if ($_config['sanity_recheck_blocks'] > 0) {
 
         $key = $db->single("SELECT public_key FROM accounts WHERE id=:id", [":id" => $data['generator']]);
 
-        if (!$block->mine($key, $data['nonce'], $data['argon'], $data['difficulty'], $blocks[$i - 1]['id'],
-            $blocks[$i - 1]['height'])) {
+        if (!$block->mine(
+            $key,
+            $data['nonce'],
+            $data['argon'],
+            $data['difficulty'],
+            $blocks[$i - 1]['id'],
+            $blocks[$i - 1]['height']
+        )) {
             $db->run("UPDATE config SET val=1 WHERE cfg='sanity_sync'");
             _log("Invalid block detected. Deleting everything after $data[height] - $data[id]");
             sleep(10);

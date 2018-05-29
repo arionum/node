@@ -4,7 +4,7 @@ $_config['db_connect']="mysql:host=localhost;dbname=ENTER-DB-NAME";
 $_config['db_user']="ENTER-DB-USER";
 $_config['db_pass']="ENTER-DB-PASS";
 
-// Maximum number of connected peers 
+// Maximum number of connected peers
 $_config['max_peers']=30;
 // Testnet, used for development
 $_config['testnet']=false;
@@ -36,5 +36,3 @@ $_config['sanity_rebroadcast_locals']=true;
 $_config['enable_logging']=false;
 // log file, should not be publicly viewable
 $_config['log_file']="/var/log/aro.log";
-
-?>

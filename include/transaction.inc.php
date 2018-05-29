@@ -6,7 +6,7 @@ class Transaction
     public function reverse($block)
     {
         global $db;
-        $acc = new Account;
+        $acc = new Account();
         $r = $db->run("SELECT * FROM transactions WHERE block=:block", [":block" => $block]);
         foreach ($r as $x) {
             if (empty($x['src'])) {
@@ -40,7 +40,7 @@ class Transaction
     public function clean_mempool()
     {
         global $db;
-        $block = new Block;
+        $block = new Block();
         $current = $block->current();
         $height = $current['height'];
         $limit = $height - 1000;
@@ -51,7 +51,7 @@ class Transaction
     public function mempool($max)
     {
         global $db;
-        $block = new Block;
+        $block = new Block();
         $current = $block->current();
         $height = $current['height'] + 1;
         // only get the transactions that are not locked with a future height
@@ -64,15 +64,16 @@ class Transaction
             $i = 0;
             $balance = [];
             foreach ($r as $x) {
-                $trans = ["id"         => $x['id'],
-                          "dst"        => $x['dst'],
-                          "val"        => $x['val'],
-                          "fee"        => $x['fee'],
-                          "signature"  => $x['signature'],
-                          "message"    => $x['message'],
-                          "version"    => $x['version'],
-                          "date"       => $x['date'],
-                          "public_key" => $x['public_key'],
+                $trans = [
+                    "id"         => $x['id'],
+                    "dst"        => $x['dst'],
+                    "val"        => $x['val'],
+                    "fee"        => $x['fee'],
+                    "signature"  => $x['signature'],
+                    "message"    => $x['message'],
+                    "version"    => $x['version'],
+                    "date"       => $x['date'],
+                    "public_key" => $x['public_key'],
                 ];
 
                 if ($i >= $max) {
@@ -122,22 +123,23 @@ class Transaction
     public function add_mempool($x, $peer = "")
     {
         global $db;
-        $block = new Block;
+        $block = new Block();
         $current = $block->current();
         $height = $current['height'];
         $x['id'] = san($x['id']);
-        $bind = [":peer"      => $peer,
-                 ":id"        => $x['id'],
-                 "public_key" => $x['public_key'],
-                 ":height"    => $height,
-                 ":src"       => $x['src'],
-                 ":dst"       => $x['dst'],
-                 ":val"       => $x['val'],
-                 ":fee"       => $x['fee'],
-                 ":signature" => $x['signature'],
-                 ":version"   => $x['version'],
-                 ":date"      => $x['date'],
-                 ":message"   => $x['message'],
+        $bind = [
+            ":peer"      => $peer,
+            ":id"        => $x['id'],
+            "public_key" => $x['public_key'],
+            ":height"    => $height,
+            ":src"       => $x['src'],
+            ":dst"       => $x['dst'],
+            ":val"       => $x['val'],
+            ":fee"       => $x['fee'],
+            ":signature" => $x['signature'],
+            ":version"   => $x['version'],
+            ":date"      => $x['date'],
+            ":message"   => $x['message'],
         ];
         $db->run(
             "INSERT into mempool  SET peer=:peer, id=:id, public_key=:public_key, height=:height, src=:src, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
@@ -150,21 +152,22 @@ class Transaction
     public function add($block, $height, $x)
     {
         global $db;
-        $acc = new Account;
+        $acc = new Account();
         $acc->add($x['public_key'], $block);
         $acc->add_id($x['dst'], $block);
         $x['id'] = san($x['id']);
-        $bind = [":id"         => $x['id'],
-                 ":public_key" => $x['public_key'],
-                 ":height"     => $height,
-                 ":block"      => $block,
-                 ":dst"        => $x['dst'],
-                 ":val"        => $x['val'],
-                 ":fee"        => $x['fee'],
-                 ":signature"  => $x['signature'],
-                 ":version"    => $x['version'],
-                 ":date"       => $x['date'],
-                 ":message"    => $x['message'],
+        $bind = [
+            ":id"         => $x['id'],
+            ":public_key" => $x['public_key'],
+            ":height"     => $height,
+            ":block"      => $block,
+            ":dst"        => $x['dst'],
+            ":val"        => $x['val'],
+            ":fee"        => $x['fee'],
+            ":signature"  => $x['signature'],
+            ":version"    => $x['version'],
+            ":date"       => $x['date'],
+            ":message"    => $x['message'],
         ];
         $res = $db->run(
             "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
@@ -198,11 +201,11 @@ class Transaction
     {
         // if no specific block, use current
         if ($height === 0) {
-            $block = new Block;
+            $block = new Block();
             $current = $block->current();
             $height = $current['height'];
         }
-        $acc = new Account;
+        $acc = new Account();
         $info = $x['val']."-".$x['fee']."-".$x['dst']."-".$x['message']."-".$x['version']."-".$x['public_key']."-".$x['date'];
 
         // the value must be >=0
@@ -309,8 +312,8 @@ class Transaction
     public function get_transaction($id)
     {
         global $db;
-        $acc = new Account;
-        $block = new Block;
+        $acc = new Account();
+        $block = new Block();
         $current = $block->current();
 
         $x = $db->row("SELECT * FROM transactions WHERE id=:id", [":id" => $id]);
@@ -318,17 +321,18 @@ class Transaction
         if (!$x) {
             return false;
         }
-        $trans = ["block"      => $x['block'],
-                  "height"     => $x['height'],
-                  "id"         => $x['id'],
-                  "dst"        => $x['dst'],
-                  "val"        => $x['val'],
-                  "fee"        => $x['fee'],
-                  "signature"  => $x['signature'],
-                  "message"    => $x['message'],
-                  "version"    => $x['version'],
-                  "date"       => $x['date'],
-                  "public_key" => $x['public_key'],
+        $trans = [
+            "block"      => $x['block'],
+            "height"     => $x['height'],
+            "id"         => $x['id'],
+            "dst"        => $x['dst'],
+            "val"        => $x['val'],
+            "fee"        => $x['fee'],
+            "signature"  => $x['signature'],
+            "message"    => $x['message'],
+            "version"    => $x['version'],
+            "date"       => $x['date'],
+            "public_key" => $x['public_key'],
         ];
         $trans['src'] = $acc->get_address($x['public_key']);
         $trans['confirmations'] = $current['height'] - $x['height'];
@@ -352,9 +356,9 @@ class Transaction
     public function get_transactions($height = "", $id = "")
     {
         global $db;
-        $block = new Block;
+        $block = new Block();
         $current = $block->current();
-        $acc = new Account;
+        $acc = new Account();
         $height = san($height);
         $id = san($id);
         if (empty($id) && empty($height)) {
@@ -367,17 +371,18 @@ class Transaction
         }
         $res = [];
         foreach ($r as $x) {
-            $trans = ["block"      => $x['block'],
-                      "height"     => $x['height'],
-                      "id"         => $x['id'],
-                      "dst"        => $x['dst'],
-                      "val"        => $x['val'],
-                      "fee"        => $x['fee'],
-                      "signature"  => $x['signature'],
-                      "message"    => $x['message'],
-                      "version"    => $x['version'],
-                      "date"       => $x['date'],
-                      "public_key" => $x['public_key'],
+            $trans = [
+                "block"      => $x['block'],
+                "height"     => $x['height'],
+                "id"         => $x['id'],
+                "dst"        => $x['dst'],
+                "val"        => $x['val'],
+                "fee"        => $x['fee'],
+                "signature"  => $x['signature'],
+                "message"    => $x['message'],
+                "version"    => $x['version'],
+                "date"       => $x['date'],
+                "public_key" => $x['public_key'],
             ];
             $trans['src'] = $acc->get_address($x['public_key']);
             $trans['confirmations'] = $current['height'] - $x['height'];
@@ -407,17 +412,18 @@ class Transaction
         if (!$x) {
             return false;
         }
-        $trans = ["block"      => $x['block'],
-                  "height"     => $x['height'],
-                  "id"         => $x['id'],
-                  "dst"        => $x['dst'],
-                  "val"        => $x['val'],
-                  "fee"        => $x['fee'],
-                  "signature"  => $x['signature'],
-                  "message"    => $x['message'],
-                  "version"    => $x['version'],
-                  "date"       => $x['date'],
-                  "public_key" => $x['public_key'],
+        $trans = [
+            "block"      => $x['block'],
+            "height"     => $x['height'],
+            "id"         => $x['id'],
+            "dst"        => $x['dst'],
+            "val"        => $x['val'],
+            "fee"        => $x['fee'],
+            "signature"  => $x['signature'],
+            "message"    => $x['message'],
+            "version"    => $x['version'],
+            "date"       => $x['date'],
+            "public_key" => $x['public_key'],
         ];
         $trans['src'] = $x['src'];
 

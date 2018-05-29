@@ -145,7 +145,7 @@ class Account
     public function get_transactions($id, $limit = 100)
     {
         global $db;
-        $block = new Block;
+        $block = new Block();
         $current = $block->current();
         $public_key = $this->public_key($id);
         $limit = intval($limit);

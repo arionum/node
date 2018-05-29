@@ -276,7 +276,7 @@ if ($q == "getAddress") {
      * @apiSuccess {string} private_key Private key
      */
 
-    $acc = new Account;
+    $acc = new Account();
     $res = $acc->generate_account();
     api_echo($res);
 } elseif ($q == "currentBlock") {
@@ -391,10 +391,10 @@ if ($q == "getAddress") {
         api_err("Hard fork in progress. Please retry the transaction later!"); //10800
     }
 
-    $acc = new Account;
-    $block = new Block;
+    $acc = new Account();
+    $block = new Block();
 
-    $trx = new Transaction;
+    $trx = new Transaction();
 
     $dst = san($data['dst']);
 

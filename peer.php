@@ -49,8 +49,10 @@ if ($q == "peer") {
     }
     $hostname = san_host($hostname);
     // if it's already peered, only repeer on request
-    $res = $db->single("SELECT COUNT(1) FROM peers WHERE hostname=:hostname AND ip=:ip",
-        [":hostname" => $hostname, ":ip" => $ip]);
+    $res = $db->single(
+        "SELECT COUNT(1) FROM peers WHERE hostname=:hostname AND ip=:ip",
+        [":hostname" => $hostname, ":ip" => $ip]
+    );
     if ($res == 1) {
         if ($data['repeer'] == 1) {
             $res = peer_post($hostname."/peer.php?q=peer", ["hostname" => $_config['hostname']]);
@@ -68,8 +70,10 @@ if ($q == "peer") {
     if ($res < $_config['max_peers']) {
         $reserve = 0;
     }
-    $db->run("INSERT ignore INTO peers SET hostname=:hostname, reserve=:reserve, ping=UNIX_TIMESTAMP(), ip=:ip ON DUPLICATE KEY UPDATE hostname=:hostname2",
-        [":ip" => $ip, ":hostname2" => $hostname, ":hostname" => $hostname, ":reserve" => $reserve]);
+    $db->run(
+        "INSERT ignore INTO peers SET hostname=:hostname, reserve=:reserve, ping=UNIX_TIMESTAMP(), ip=:ip ON DUPLICATE KEY UPDATE hostname=:hostname2",
+        [":ip" => $ip, ":hostname2" => $hostname, ":hostname" => $hostname, ":reserve" => $reserve]
+    );
     // re-peer to make sure the peer is valid
     $res = peer_post($hostname."/peer.php?q=peer", ["hostname" => $_config['hostname']]);
     if ($res !== false) {
@@ -118,7 +122,7 @@ if ($q == "peer") {
     if ($res != 0) {
         api_err("The transaction is already in a block");
     }
-    $acc = new Account;
+    $acc = new Account();
     $src = $acc->get_address($data['public_key']);
     // make sure the sender has enough balance
     $balance = $db->single("SELECT balance FROM accounts WHERE id=:id", [":id" => $src]);
@@ -214,8 +218,17 @@ if ($q == "peer") {
     }
     $b = $data;
     // add the block to the blockchain
-    $res = $block->add($b['height'], $b['public_key'], $b['nonce'], $b['data'], $b['date'], $b['signature'],
-        $b['difficulty'], $b['reward_signature'], $b['argon']);
+    $res = $block->add(
+        $b['height'],
+        $b['public_key'],
+        $b['nonce'],
+        $b['data'],
+        $b['date'],
+        $b['signature'],
+        $b['difficulty'],
+        $b['reward_signature'],
+        $b['argon']
+    );
 
     if (!$res) {
         _log('['.$ip."] invalid block data - $data[height]");
@@ -245,8 +258,10 @@ elseif ($q == "getBlock") {
 
     $height = intval($data['height']);
 
-    $r = $db->run("SELECT id,height FROM blocks WHERE height>=:height ORDER by height ASC LIMIT 100",
-        [":height" => $height]);
+    $r = $db->run(
+        "SELECT id,height FROM blocks WHERE height>=:height ORDER by height ASC LIMIT 100",
+        [":height" => $height]
+    );
     foreach ($r as $x) {
         $blocks[$x['height']] = $block->export($x['id']);
     }
