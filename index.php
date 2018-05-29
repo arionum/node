@@ -1,7 +1,7 @@
 <?php
-/* 
+/*
 The MIT License (MIT)
-Copyright (c) 2018 AroDev 
+Copyright (c) 2018 AroDev
 
 www.arionum.com
 
@@ -24,14 +24,9 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-
 require_once("include/init.inc.php");
-$block=new Block;
-$current=$block->current();
+$block = new Block();
+$current = $block->current();
 
 echo "<h3>Arionum Node</h3>";
 echo "System check complete.<br><br> Current block: $current[height]";
-
-
-
-?>
