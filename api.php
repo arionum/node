@@ -467,7 +467,7 @@ elseif($q=="getTransactions"){
     
     
     $trx->add_mempool($transaction, "local");
-    system("php propagate.php transaction $hash &>/dev/null &");
+    system("php propagate.php transaction $hash > /dev/null 2>&1  &");
     api_echo($hash);
 } elseif($q=="mempoolSize"){
 /**
