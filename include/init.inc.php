@@ -17,7 +17,7 @@ if(php_sapi_name() !== 'cli'&&substr_count($_SERVER['PHP_SELF'],"/")>1){
 require_once("include/config.inc.php");
 
 // Set default timezone from configuration
-date_default_timezone_set($_config['timezone']);
+date_default_timezone_set($_config['timezone'] ?? 'UTC');
 
 require_once("include/db.inc.php");
 require_once("include/functions.inc.php");
