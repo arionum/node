@@ -37,4 +37,5 @@ $_config['enable_logging']=false;
 // log file, should not be publicly viewable
 $_config['log_file']="/var/log/aro.log";
 
-?>
+// Default timezone to be set
+$_config['timezone'] = 'UTC';
