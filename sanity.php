@@ -165,7 +165,7 @@ if($total_peers==0&&$_config['testnet']==false){
 	$f=file("https://www.arionum.com/peers.txt");
 	shuffle($f);
 	// we can't connect to arionum.com
-	if(count($f)<2){ @unlink("tmp/sanity-lock"); die("Could nto connect to arionum.com! Will try later!\n"); }
+	if(count($f)<2){ @unlink("tmp/sanity-lock"); die("Could not connect to arionum.com! Will try later!\n"); }
 	foreach($f as $peer){
 		//peer with all until max_peers, this will ask them to send a peering request to our peer.php where we add their peer to the db.
 		$peer=trim(san_host($peer));
@@ -187,7 +187,7 @@ if($total_peers==0&&$_config['testnet']==false){
 	$r=$db->run("SELECT id,hostname FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP()");
 	$total_peers=count($r);
 	if($total_peers==0){
-		// something went wrong, could nto add any peers -> exit
+		// something went wrong, could not add any peers -> exit
 		@unlink("tmp/sanity-lock");
 		die("Could not peer to any peers! Please check internet connectivity!\n");
 	}
