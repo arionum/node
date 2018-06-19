@@ -1,8 +1,6 @@
 <?php
 // ARO version
 define("VERSION", "0.3.0");
-// Amsterdam timezone by default, should probably be moved to config
-date_default_timezone_set("Europe/Amsterdam");
 
 
 
@@ -17,6 +15,10 @@ if(php_sapi_name() !== 'cli'&&substr_count($_SERVER['PHP_SELF'],"/")>1){
 
 
 require_once("include/config.inc.php");
+
+// Set default timezone from configuration
+date_default_timezone_set($_config['timezone']);
+
 require_once("include/db.inc.php");
 require_once("include/functions.inc.php");
 require_once("include/block.inc.php");
