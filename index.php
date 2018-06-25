@@ -24,7 +24,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-require_once(__DIR__.'/include/init.inc.php');
+require_once __DIR__.'/include/init.inc.php';
 $block = new Block();
 $current = $block->current();
 ?>
@@ -51,13 +51,6 @@ $current = $block->current();
 
         html {
             box-sizing: border-box;
-        }
-
-        *, ::after, ::before {
-            box-sizing: inherit;
-        }
-
-        html {
             background-color: #fff;
             font-size: 16px;
             -moz-osx-font-smoothing: grayscale;
@@ -72,15 +65,16 @@ $current = $block->current();
             text-size-adjust: 100%;
         }
 
+        *, ::after, ::before {
+            box-sizing: inherit;
+        }
+
         section {
             display: block;
         }
 
         body {
             font-family: "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        }
-
-        body {
             color: #4a4a4a;
             font-size: 1rem;
             font-weight: 400;
@@ -98,29 +92,8 @@ $current = $block->current();
         }
 
         .container {
-            margin: 0 auto;
             position: relative;
-        }
-
-        @media screen and (min-width: 1088px) {
-            .container {
-                max-width: 960px;
-                width: 960px;
-            }
-        }
-
-        @media screen and (min-width: 1280px) {
-            .container {
-                max-width: 1152px;
-                width: 1152px;
-            }
-        }
-
-        @media screen and (min-width: 1472px) {
-            .container {
-                max-width: 1344px;
-                width: 1344px;
-            }
+            margin: 0 auto;
         }
 
         .field.is-grouped {
@@ -220,9 +193,6 @@ $current = $block->current();
 
         .title {
             word-break: break-word;
-        }
-
-        .title {
             color: #363636;
             font-size: 2rem;
             font-weight: 600;
@@ -280,7 +250,31 @@ $current = $block->current();
         }
 
         a.is-dark {
-            color: white;
+            color: #fff;
+        }
+
+        @media screen and (min-width: 1088px) {
+
+            .container {
+                max-width: 960px;
+                width: 960px;
+            }
+        }
+
+        @media screen and (min-width: 1280px) {
+
+            .container {
+                max-width: 1152px;
+                width: 1152px;
+            }
+        }
+
+        @media screen and (min-width: 1472px) {
+
+            .container {
+                max-width: 1344px;
+                width: 1344px;
+            }
         }
     </style>
 </head>
