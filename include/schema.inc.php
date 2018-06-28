@@ -140,6 +140,14 @@ if ($dbversion == 6) {
     $db->run("ALTER TABLE `accounts` ADD `alias` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL AFTER `balance`; ");
     $dbversion++;
 }
+if ($dbversion == 7) {
+    $db->run("ALTER TABLE `accounts` ADD INDEX(`alias`); ");
+    $db->run("ALTER TABLE `transactions` ADD KEY `dst` (`dst`), ADD KEY `height` (`height`),  ADD KEY `public_key` (`public_key`);");
+    $dbversion++;
+}
+
+
+
 // update the db version to the latest one
 if ($dbversion != $_config['dbversion']) {
     $db->run("UPDATE config SET val=:val WHERE cfg='dbversion'", [":val" => $dbversion]);
