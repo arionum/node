@@ -298,11 +298,13 @@ $current = $block->current();
                         <span class="tag is-light"><?= ($_config['public_api']) ? 'yes' : 'no'; ?></span>
                     </div>
                 </div>
-                <div class="control">
-                    <a class="tags is-dark" href="./doc/" target="_blank">
-                        <strong class="tag is-info">Documentation</strong>
-                    </a>
-                </div>
+                <?php if (is_dir(__DIR__.'/doc')) { ?>
+                    <div class="control">
+                        <a class="tags is-dark" href="./doc/" target="_blank">
+                            <strong class="tag is-info">Documentation</strong>
+                        </a>
+                    </div>
+                <?php } ?>
             </div>
         </div>
     </div>

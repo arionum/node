@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "devDependencies": {
+    "apidoc": "^0.17.6"
+  },
+  "scripts": {
+    "docs": "apidoc -i . -o doc -f \".*\\.php\""
+  },
+  "apidoc": {
+    "name": "Arionum Node API Docs"
+  }
+}

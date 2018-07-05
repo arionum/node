@@ -23,6 +23,20 @@ This app should only be run in the main directory of the domain/subdomain, ex: h
 
 The node should have a public IP and be accessible over internet.
 
+**Generating API documentation:**
+
+With NPM
+
+```bash
+npm run docs
+```
+
+With Yarn
+
+```bash
+yarn docs
+```
+
 ## Links
 
 - Official website: https://www.arionum.com

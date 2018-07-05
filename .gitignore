@@ -1,1 +1,4 @@
-include/config.inc.php
+/node_modules
+/doc
+/include/config.inc.php
+/tmp/sanity-lock
