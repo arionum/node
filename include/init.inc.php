@@ -1,8 +1,8 @@
 <?php
 // ARO version
-define("VERSION", "0.3.0");
+define("VERSION", "0.4.0");
 // Amsterdam timezone by default, should probably be moved to config
-date_default_timezone_set("Europe/Amsterdam");
+date_default_timezone_set("UTC");
 
 //error_reporting(E_ALL & ~E_NOTICE);
 error_reporting(0);
@@ -24,7 +24,7 @@ if ($_config['db_pass'] == "ENTER-DB-PASS") {
     die("Please update your config file and set your db password");
 }
 // initial DB connection
-$db = new DB($_config['db_connect'], $_config['db_user'], $_config['db_pass'], 0);
+$db = new DB($_config['db_connect'], $_config['db_user'], $_config['db_pass'], $_config['enable_logging']);
 if (!$db) {
     die("Could not connect to the DB backend.");
 }
@@ -63,6 +63,17 @@ if ($_config['maintenance'] == 1) {
 
 // update the db schema, on every git pull or initial install
 if (file_exists("tmp/db-update")) {
+    //checking if the server has at least 2GB of ram
+    $ram=file_get_contents("/proc/meminfo");
+    $ramz=explode("MemTotal:",$ram);
+    $ramb=explode("kB",$ramz[1]);
+    $ram=intval(trim($ramb[0]));
+    if($ram<1700000) {
+        die("The node requires at least 2 GB of RAM");
+    }
+    if($_config['masternode']==true && $ram<7000000){
+        die("The masternode require at least 8GB of RAM");
+    }
     $res = unlink("tmp/db-update");
     if ($res) {
         echo "Updating db schema! Please refresh!\n";

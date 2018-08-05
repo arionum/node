@@ -37,7 +37,7 @@ function api_echo($data)
 }
 
 // log function, shows only in cli atm
-function _log($data)
+function _log($data, $verbosity = 0)
 {
     $date = date("[Y-m-d H:i:s]");
     $trace = debug_backtrace();
@@ -57,7 +57,7 @@ function _log($data)
         echo $res;
     }
     global $_config;
-    if ($_config['enable_logging'] == true) {
+    if ($_config['enable_logging'] == true && $_config['log_verbosity'] >= $verbosity) {
         @file_put_contents($_config['log_file'], $res, FILE_APPEND);
     }
 }

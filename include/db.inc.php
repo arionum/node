@@ -31,6 +31,7 @@ class DB extends PDO
 
     private function debug()
     {
+        global $_config;
         if (!$this->debugger) {
             return;
         }
@@ -56,9 +57,9 @@ class DB extends PDO
             $msg .= "\n\n$key:\n$val";
         }
 
-        if ($this->debugger) {
-            echo nl2br($msg);
-        }
+        
+            _log($msg);
+        
     }
 
     private function cleanup($bind, $sql = "")

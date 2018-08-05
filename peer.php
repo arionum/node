@@ -44,6 +44,14 @@ if ($q == "peer") {
     // sanitize the hostname
     $hostname = filter_var($data['hostname'], FILTER_SANITIZE_URL);
 
+    $bad_peers = ["127.", "localhost", "10.", "192.168.","172.16.","172.17.","172.18.","172.19.","172.20.","172.21.","172.22.","172.23.","172.24.","172.25.","172.26.","172.27.","172.28.","172.29.","172.30.","172.31."];
+    $tpeer=str_replace(["https://","http://","//"], "", $hostname);
+    foreach ($bad_peers as $bp) {
+        if (strpos($tpeer, $bp)===0) {
+            api_err("invalid-hostname");
+        }
+    }
+
     if (!filter_var($hostname, FILTER_VALIDATE_URL)) {
         api_err("invalid-hostname");
     }
@@ -166,17 +174,14 @@ if ($q == "peer") {
     if ($current['height'] == $data['height'] && $current['id'] != $data['id']) {
         // different forks, same height
         $accept_new = false;
-        if ($current['transactions'] < $data['transactions']) {
-            // accept the one with most transactions
-            $accept_new = true;
-        } elseif ($current['transactions'] == $data['transactions']) {
+
             // convert the first 12 characters from hex to decimal and the block with the largest number wins
             $no1 = hexdec(substr(coin2hex($current['id']), 0, 12));
             $no2 = hexdec(substr(coin2hex($data['id']), 0, 12));
             if (gmp_cmp($no1, $no2) == 1) {
                 $accept_new = true;
             }
-        }
+        
         if ($accept_new) {
             // if the new block is accepted, run a microsanity to sync it
             _log('['.$ip."] Starting microsanity - $data[height]");

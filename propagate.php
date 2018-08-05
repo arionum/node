@@ -67,6 +67,7 @@ if ((empty($peer) || $peer == 'all') && $type == "block") {
     }
     $r = $db->run("SELECT * FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0 $ewhr");
     foreach ($r as $x) {
+        if($x['hostname']==$_config['hostname']) continue;
         // encode the hostname in base58 and sanitize the IP to avoid any second order shell injections
         $host = base58_encode($x['hostname']);
         $ip = filter_var($x['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
@@ -105,6 +106,7 @@ if ($type == "block") {
     // send the block as POST to the peer
     echo "Block sent to $hostname:\n";
     $response = peer_post($hostname."/peer.php?q=submitBlock", $data, 60, $debug);
+    _log("Propagating block to $hostname - [result: $response] $data[height] - $data[id]",2);
     if ($response == "block-ok") {
         echo "Block $i accepted. Exiting.\n";
         exit;

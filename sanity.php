@@ -70,10 +70,72 @@ if ($_config['dbversion'] < 2) {
     exit;
 }
 
+ini_set('memory_limit', '2G');
+
 $block = new Block();
 $acc = new Account();
 $current = $block->current();
 
+// bootstrapping the initial sync
+if ($current['height']==1) {
+    echo "Bootstrapping!\n";
+    $last=file_get_contents("http://dumps.arionum.com/last");
+    $last=intval($last);
+    $failed_sync=false;
+    for ($i=1000;$i<=$last;$i=$i+1000) {
+        echo "Download file $i\n";
+        $res=trim(file_get_contents("http://dumps.arionum.com/aro.db.$i"));
+        if ($res===false) {
+            echo "Could not download the bootstrap file $i. Syncing the old fashioned way.\n";
+            break;
+        }
+        $data=json_decode($res, true);
+        
+        if ($data===false||is_null($data)) {
+            echo "Could not parse the bootstrap file $i. Syncing the old fashioned way.\n";
+            echo json_last_error_msg();
+            break;
+        }
+        foreach ($data as $x) {
+            if (count($x['data'])>0) {
+                $transactions=[];
+                
+                foreach ($x['data'] as $d) {
+                    $trans = [
+                            "id"         => $d[0],
+                            "dst"        => $d[1],
+                            "val"        => $d[2],
+                            "fee"        => $d[3],
+                            "signature"  => $d[4],
+                            "message"    => $d[5],
+                            "version"    => $d[6],
+                            "date"       => $d[7],
+                            "public_key" => $d[8],
+                        ];
+                    ksort($trans);
+                    $transactions[$d[0]] = $trans;
+                }
+                ksort($transactions);
+                $x['data']=$transactions;
+            }
+            
+        
+            echo "-> Adding block $x[height]\n";
+
+            $res=$block->add($x['height'], $x['public_key'], $x['nonce'], $x['data'], $x['date'], $x['signature'], $x['difficulty'], $x['reward_signature'], $x['argon'], true);
+            if (!$res) {
+                echo "Error: Adding the block failed. Syncing the old way.\n";
+                $failed_sync=true;
+                break;
+            }
+        }
+        if ($failed_sync) {
+            break;
+        }
+    }
+    
+    $current = $block->current();
+}
 // the microsanity process is an anti-fork measure that will determine the best blockchain to choose for the last block
 $microsanity = false;
 if ($arg == "microsanity" && !empty($arg2)) {
@@ -104,19 +166,16 @@ if ($arg == "microsanity" && !empty($arg2)) {
         }
 
         // the blockchain with the most transactions wins the fork (to encourage the miners to include as many transactions as possible) / might backfire on garbage
-        if ($current['transactions'] > $data['transactions']) {
-            echo "Block has less transactions\n";
-            break;
-        } elseif ($current['transactions'] == $data['transactions']) {
-            // transform the first 12 chars into an integer and choose the blockchain with the biggest value
-            $no1 = hexdec(substr(coin2hex($current['id']), 0, 12));
-            $no2 = hexdec(substr(coin2hex($data['id']), 0, 12));
 
-            if (gmp_cmp($no1, $no2) != -1) {
-                echo "Block hex larger than current\n";
-                break;
-            }
+        // transform the first 12 chars into an integer and choose the blockchain with the biggest value
+        $no1 = hexdec(substr(coin2hex($current['id']), 0, 12));
+        $no2 = hexdec(substr(coin2hex($data['id']), 0, 12));
+
+        if (gmp_cmp($no1, $no2) != -1) {
+            echo "Block hex larger than current\n";
+            break;
         }
+        
         // make sure the block is valid
         $prev = $block->get($current['height'] - 1);
         $public = $acc->public_key($data['generator']);
@@ -126,7 +185,8 @@ if ($arg == "microsanity" && !empty($arg2)) {
             $data['argon'],
             $block->difficulty($current['height'] - 1),
             $prev['id'],
-            $prev['height']
+            $prev['height'],
+            $data['date']
         )) {
             echo "Invalid prev-block\n";
             break;
@@ -142,6 +202,8 @@ if ($arg == "microsanity" && !empty($arg2)) {
         // add the new block
         echo "Starting to sync last block from $x[hostname]\n";
         $b = $data;
+
+        
         $res = $block->add(
             $b['height'],
             $b['public_key'],
@@ -206,10 +268,15 @@ if ($total_peers == 0 && $_config['testnet'] == false) {
     foreach ($f as $peer) {
         //peer with all until max_peers, this will ask them to send a peering request to our peer.php where we add their peer to the db.
         $peer = trim(san_host($peer));
-        $bad_peers = ["127.0.0.1", "localhost", "10.0.0", "192.168.0"];
-        if (str_replace($bad_peers, "", $peer) != $peer) {
-            continue;
+        $bad_peers = ["127.", "localhost", "10.", "192.168.","172.16.","172.17.","172.18.","172.19.","172.20.","172.21.","172.22.","172.23.","172.24.","172.25.","172.26.","172.27.","172.28.","172.29.","172.30.","172.31."];
+
+        $tpeer=str_replace(["https://","http://","//"], "", $peer);
+        foreach ($bad_peers as $bp) {
+            if (strpos($tpeer, $bp)===0) {
+                continue;
+            }
         }
+
         $peer = filter_var($peer, FILTER_SANITIZE_URL);
         if (!filter_var($peer, FILTER_VALIDATE_URL)) {
             continue;
@@ -269,9 +336,12 @@ foreach ($r as $x) {
             continue;
         }
         $peered[$pid] = 1;
-        $bad_peers = ["127.0.0.1", "localhost", "10.0.0.", "192.168.0."];
-        if (str_replace($bad_peers, "", $peer['hostname']) != $peer['hostname']) {
-            continue;
+        $bad_peers = ["127.", "localhost", "10.", "192.168.","172.16.","172.17.","172.18.","172.19.","172.20.","172.21.","172.22.","172.23.","172.24.","172.25.","172.26.","172.27.","172.28.","172.29.","172.30.","172.31."];
+        $tpeer=str_replace(["https://","http://","//"], "", $peer['hostname']);
+        foreach ($bad_peers as $bp) {
+            if (strpos($tpeer, $bp)===0) {
+                continue;
+            }
         }
         // if it's our hostname, ignore
         if ($peer['hostname'] == $_config['hostname']) {
@@ -350,18 +420,14 @@ foreach ($r as $x) {
                 $largest_height = $data['height'];
                 $largest_height_block = $data['id'];
             } else {
-                // if this block has more transactions, declare it as winner
-                if ($blocks[$largest_height_block]['transactions'] < $data['transactions']) {
+               
+
+                    // if the blocks have the same number of transactions, choose the one with the highest derived integer from the first 12 hex characters
+                $no1 = hexdec(substr(coin2hex($largest_height_block), 0, 12));
+                $no2 = hexdec(substr(coin2hex($data['id']), 0, 12));
+                if (gmp_cmp($no1, $no2) == 1) {
                     $largest_height = $data['height'];
                     $largest_height_block = $data['id'];
-                } elseif ($blocks[$largest_height_block]['transactions'] == $data['transactions']) {
-                    // if the blocks have the same number of transactions, choose the one with the highest derived integer from the first 12 hex characters
-                    $no1 = hexdec(substr(coin2hex($largest_height_block), 0, 12));
-                    $no2 = hexdec(substr(coin2hex($data['id']), 0, 12));
-                    if (gmp_cmp($no1, $no2) == 1) {
-                        $largest_height = $data['height'];
-                        $largest_height_block = $data['id'];
-                    }
                 }
             }
         } elseif ($data['difficulty'] < $blocks[$largest_height_block]['difficulty']) {
@@ -428,6 +494,9 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                     $last_good = $i;
                 }
             }
+            if ($last_good==$current['height']-1&&$last_good%3==2) {
+                $block->pop(1);
+            }
             // if last 10 blocks are good, verify all the blocks
             if ($invalid == false) {
                 $cblock = [];
@@ -441,13 +510,17 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                 }
                 // check if the block mining data is correct
                 for ($i = $last_good + 1; $i <= $largest_height; $i++) {
+                    if (($i-1)%3==2) {
+                        continue;
+                    }
                     if (!$block->mine(
                         $cblock[$i]['public_key'],
                         $cblock[$i]['nonce'],
                         $cblock[$i]['argon'],
                         $cblock[$i]['difficulty'],
                         $cblock[$i - 1]['id'],
-                        $cblock[$i - 1]['height']
+                        $cblock[$i - 1]['height'],
+                        $cblock[$i]['date']
                     )) {
                         $invalid = true;
                         break;
@@ -456,6 +529,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
             }
             // if the blockchain proves ok, delete until the last block
             if ($invalid == false) {
+                _log("Changing fork, deleting $last_good", 1);
                 $block->delete($last_good);
                 $current = $block->current();
                 $data = $current;
@@ -477,7 +551,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
             foreach ($data as $b) {
                 $b['id'] = san($b['id']);
                 $b['height'] = san($b['height']);
-
+                
                 if (!$block->check($b)) {
                     _log("Block check: could not add block - $b[id] - $b[height]");
                     $good_peer = false;
@@ -591,7 +665,7 @@ foreach ($f as $x) {
 
 
 //recheck the last blocks
-if ($_config['sanity_recheck_blocks'] > 0) {
+if ($_config['sanity_recheck_blocks'] > 0 && $_config['testnet'] == false) {
     _log("Rechecking blocks");
     $blocks = [];
     $all_blocks_ok = true;
@@ -616,7 +690,8 @@ if ($_config['sanity_recheck_blocks'] > 0) {
             $data['argon'],
             $data['difficulty'],
             $blocks[$i - 1]['id'],
-            $blocks[$i - 1]['height']
+            $blocks[$i - 1]['height'],
+            $data['date']
         )) {
             $db->run("UPDATE config SET val=1 WHERE cfg='sanity_sync'");
             _log("Invalid block detected. Deleting everything after $data[height] - $data[id]");

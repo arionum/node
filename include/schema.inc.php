@@ -145,6 +145,25 @@ if ($dbversion == 7) {
     $db->run("ALTER TABLE `transactions` ADD KEY `dst` (`dst`), ADD KEY `height` (`height`),  ADD KEY `public_key` (`public_key`);");
     $dbversion++;
 }
+if ($dbversion == 8) {
+  $db->run("CREATE TABLE `masternode` (
+    `public_key` varchar(128) COLLATE utf8mb4_bin NOT NULL,
+    `height` int(11) NOT NULL,
+    `ip` varchar(16) COLLATE utf8mb4_bin NOT NULL,
+    `last_won` int(11) NOT NULL DEFAULT '0',
+    `blacklist` int(11) NOT NULL DEFAULT '0',
+    `fails` int(11) NOT NULL DEFAULT '0',
+    `status` tinyint(4) NOT NULL DEFAULT '1'
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;");
+
+  $db->run("ALTER TABLE `masternode`
+  ADD PRIMARY KEY (`public_key`),
+  ADD KEY `last_won` (`last_won`),
+  ADD KEY `status` (`status`),
+  ADD KEY `blacklist` (`blacklist`),
+  ADD KEY `height` (`height`);");
+  $dbversion++;
+}
 
 
 

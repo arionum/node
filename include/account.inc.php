@@ -93,7 +93,71 @@ class Account
 
         return true;
     }
+    //check alias validity
+    public function free_alias($id)
+    {
+        global $db;
+        $orig=$id;
+        $id=strtoupper($id);
+        $id = san($id);
+        if (strlen($id)<4||strlen($id)>25) {
+            return false;
+        }
+        if($orig!=$id){
+            return false;
+        }
+        
+        if ($db->single("SELECT COUNT(1) FROM accounts WHERE alias=:alias", [":alias"=>$id])==0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
+    //check if an account already has an alias
+    public function has_alias($public_key){
+        global $db;
+        $public_key=san($public_key);
+        $res=$db->single("SELECT COUNT(1) FROM accounts WHERE public_key=:public_key AND alias IS NOT NULL",[":public_key"=>$public_key]);
+        if($res!=0) return true;
+        else return false;
+    }
+
+    //check alias validity
+    public function valid_alias($id)
+    {
+        global $db;
+        $orig=$id;
+        $banned=["MERCURY","DEVS","DEVELOPMENT", "MARKETING", "MERCURY80","DEVARO", "DEVELOPER","DEVELOPERS","ARODEV", "DONATION","MERCATOX", "OCTAEX", "MERCURY", "ARIONUM", "ESCROW","OKEX","BINANCE","CRYPTOPIA","HUOBI","ITFINEX","HITBTC","UPBIT","COINBASE","KRAKEN","BITSTAMP","BITTREX","POLONIEX"];
+        $id=strtoupper($id);
+        $id = san($id);
+        if (in_array($id, $banned)) {
+            return false;
+        }
+        if (strlen($id)<4||strlen($id)>25) {
+            return false;
+        }
+        if($orig!=$id){
+            return false;
+        }
+        return $db->single("SELECT COUNT(1) FROM accounts WHERE alias=:alias", [":alias"=>$id]);
+    }
+
+    //returns the account of an alias
+    public function alias2account($alias){
+        global $db;
+        $alias=strtoupper($alias);
+        $res=$db->single("SELECT id FROM accounts WHERE alias=:alias LIMIT 1",[":alias"=>$alias]);
+        return $res;
+    }
+
+    //returns the alias of an account
+    public function account2alias($id){
+        global $db;
+        $id=san($id);
+        $res=$db->single("SELECT alias FROM accounts WHERE id=:id LIMIT 1",[":id"=>$id]);
+        return $res;
+    }
     // check the validity of an address. At the moment, it checks only the characters to be base58 and the length to be >=70 and <=128.
     public function valid($id)
     {
@@ -234,4 +298,12 @@ class Account
         $res = $db->single("SELECT public_key FROM accounts WHERE id=:id", [":id" => $id]);
         return $res;
     }
+
+    public function get_masternode($public_key){
+        global $db;
+        $res = $db->row("SELECT * FROM masternode WHERE public_key=:public_key", [":public_key" => $public_key]);
+        if(empty($res['public_key'])) return false;
+        return $res;
+    }
+
 }

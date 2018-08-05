@@ -43,10 +43,12 @@ $cmd = trim($argv[1]);
  */
 
 if ($cmd == 'clean') {
-    $tables = ["blocks", "accounts", "transactions", "mempool"];
+    $db->run("SET foreign_key_checks=0;");
+    $tables = ["accounts", "transactions", "mempool", "masternode","blocks"];
     foreach ($tables as $table) {
-        $db->run("DELETE FROM {$table}");
+        $db->run("TRUNCATE TABLE {$table}");
     }
+    $db->run("SET foreign_key_checks=1;");
 
     echo "\n The database has been cleared\n";
 } /**
@@ -214,7 +216,8 @@ elseif ($cmd == "recheck-blocks") {
             $data['argon'],
             $data['difficulty'],
             $blocks[$i - 1]['id'],
-            $blocks[$i - 1]['height']
+            $blocks[$i - 1]['height'],
+            $data['date']
         )) {
             _log("Invalid block detected. We should delete everything after $data[height] - $data[id]");
             break;
@@ -408,7 +411,8 @@ elseif ($cmd == "check-address") {
     }
 
     echo "The address is valid\n";
-} /**
+} 
+/**
  * @api {php util.php} get-address Get-Address
  * @apiName get-address
  * @apiGroup UTIL
@@ -429,6 +433,20 @@ elseif ($cmd == 'get-address') {
         die("Invalid public key");
     }
     print($acc->get_address($public_key));
+/**
+ * @api {php util.php} clean-blacklist Clean-Blacklist
+ * @apiName clean-blacklist
+ * @apiGroup UTIL
+ * @apiDescription Removes all the peers from blacklist
+ *
+ * @apiExample {cli} Example usage:
+ * php util.php clean-blacklist
+ *
+ */
+
+} elseif ($cmd == 'clean-blacklist') {
+   $db->run("UPDATE peers SET blacklisted=0, fails=0, stuckfail=0");
+   echo "All the peers have been removed from the blacklist\n";
 } else {
     echo "Invalid command\n";
 }

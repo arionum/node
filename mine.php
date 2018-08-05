@@ -45,11 +45,43 @@ if ($q == "info") {
     $diff = $block->difficulty();
     $current = $block->current();
 
+    $current_height=$current['height'];
+    $recommendation="mine";
+    $argon_mem=16384;
+    $argon_threads=4;
+    $argon_time=4;
+    if ($current_height<80000) {
+        if ($current_height > 10800) {
+            $argon_mem=524288;
+            $argon_threads=1;
+            $argon_time=1;
+        } 
+    } else {
+        if ($current_height%3==0) {
+            $argon_mem=524288;
+            $argon_threads=1;
+            $argon_time=1;
+        } elseif ($current_height%3==2) {
+            global $db;
+            $winner=$db->single(
+                "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 1",
+                [":current"=>$current_height, ":start"=>$current_height-360]
+            );
+            $recommendation="pause";
+            if ($winner===false) {
+                $recommendation="mine";
+            }
+        }
+    }
     $res = [
         "difficulty" => $diff,
         "block"      => $current['id'],
         "height"     => $current['height'],
         "testnet"    => $_config['testnet'],
+        "recommendation"=> $recommendation,
+        "argon_mem"  => $argon_mem,
+        "argon_threads"  => $argon_threads,
+        "argon_time"  => $argon_time,
     ];
     api_echo($res);
     exit;

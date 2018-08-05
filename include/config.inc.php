@@ -36,3 +36,9 @@ $_config['sanity_rebroadcast_locals']=true;
 $_config['enable_logging']=false;
 // log file, should not be publicly viewable
 $_config['log_file']="/var/log/aro.log";
+//log verbosity, default 0, maximum 3
+$_config['log_verbosity']=0;
+//will this run as a masternode?
+$_config['masternode']=false;
+//masternode public key
+$_config['masternode_public_key']="";

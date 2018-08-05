@@ -124,17 +124,22 @@ if ($q == "getAddress") {
      *
      * @apiParam {string} [public_key] Public key
      * @apiParam {string} [account] Account id / address
+     * @apiParam {string} [alias] alias
      *
      * @apiSuccess {string} data The ARO balance
      */
 
     $public_key = $data['public_key'];
     $account = $data['account'];
+    $alias = $data['alias'];
     if (!empty($public_key) && strlen($public_key) < 32) {
         api_err("Invalid public key");
     }
     if (!empty($public_key)) {
         $account = $acc->get_address($public_key);
+    }
+    if (!empty($alias)) {
+        $account = $acc->alias2account($alias);
     }
     if (empty($account)) {
         api_err("Invalid account id");
@@ -395,16 +400,28 @@ if ($q == "getAddress") {
     $block = new Block();
 
     $trx = new Transaction();
-
+    $version = intval($data['version']);
     $dst = san($data['dst']);
+    if ($version < 1) {
+        $version = 1;
+    }
 
-    if (!$acc->valid($dst)) {
-        api_err("Invalid destination address");
+    if ($version==1) {
+        if (!$acc->valid($dst)) {
+            api_err("Invalid destination address");
+        }
+        $dst_b = base58_decode($dst);
+        if (strlen($dst_b) != 64) {
+            api_err("Invalid destination address");
+        }
+    } elseif ($version==2) {
+        $dst=strtoupper($dst);
+        $dst = san($dst);
+        if (!$acc->valid_alias($dst)) {
+            api_err("Invalid destination alias");
+        }
     }
-    $dst_b = base58_decode($dst);
-    if (strlen($dst_b) != 64) {
-        api_err("Invalid destination address");
-    }
+    
 
 
     $public_key = san($data['public_key']);
@@ -430,8 +447,8 @@ if ($q == "getAddress") {
     if ($date > time() + 86400) {
         api_err("Invalid Date");
     }
-    $version = intval($data['version']);
-    $message = $data['message'];
+   
+    $message=$data['message'];
     if (strlen($message) > 128) {
         api_err("The message must be less than 128 chars");
     }
@@ -448,9 +465,28 @@ if ($q == "getAddress") {
     if ($val < 0.00000001) {
         api_err("Invalid value");
     }
+    
+    // set alias
+    if ($version==3) {
+        $fee=10;
+        $message = san($message);
+        $message=strtoupper($message);
+        if (!$acc->free_alias($message)) {
+            api_err("Invalid alias");
+        }
+        if ($acc->has_alias($public_key)) {
+            api_err("This account already has an alias");
+        }
+    }
 
-    if ($version < 1) {
-        $version = 1;
+    if ($version>=100&&$version<110) {
+        if ($version==100) {
+            $message=preg_replace("/[^0-9\.]/", "", $message);
+            if (!filter_var($message, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                api_err("Invalid Node IP - $message !");
+            }
+            $val=100000;
+        }
     }
 
     $val = number_format($val, 8, '.', '');
@@ -570,6 +606,69 @@ if ($q == "getAddress") {
     mt_srand($seed1, MT_RAND_MT19937);
     $res = mt_rand($min, $max);
     api_echo($res);
+} elseif ($q == "checkSignature") {
+    /**
+     * @api {get} /api.php?q=checkSignature  17. checkSignature
+     * @apiName checkSignature
+     * @apiGroup API
+     * @apiDescription Checks a signature against a public key
+     *
+     * @apiParam {string} [public_key] Public key
+     * @apiParam {string} [signature] signature
+     * @apiParam {string} [data] signed data
+     *
+     *
+     * @apiSuccess {boolean} data true or false
+     */
+
+    $public_key=san($data['public_key']);
+    $signature=san($data['signature']);
+    $data=$data['data'];
+    
+    api_echo(ec_verify($data, $signature, $public_key));
+} elseif ($q == "masternodes") {
+    /**
+     * @api {get} /api.php?q=masternodes  18. masternodes
+     * @apiName masternodes
+     * @apiGroup API
+     * @apiDescription Returns all the masternode data
+     *
+     *
+     *
+     * @apiSuccess {boolean} data masternode date
+     */
+
+    $res=$db->run("SELECT * FROM masternode");
+    api_echo($res);
+} elseif ($q == "getAlias") {
+    /**
+     * @api {get} /api.php?q=getAlias  189. getAlias
+     * @apiName getAlias
+     * @apiGroup API
+     * @apiDescription Returns the alias of an account
+     *
+     * @apiParam {string} [public_key] Public key
+     * @apiParam {string} [account] Account id / address
+     *
+     *
+     * @apiSuccess {string} data alias
+     */
+    
+    $public_key = $data['public_key'];
+    $account = $data['account'];
+    if (!empty($public_key) && strlen($public_key) < 32) {
+        api_err("Invalid public key");
+    }
+    if (!empty($public_key)) {
+        $account = $acc->get_address($public_key);
+    }
+  
+    if (empty($account)) {
+        api_err("Invalid account id");
+    }
+    $account = san($account);
+    
+    api_echo($acc->account2alias($account));
 } else {
     api_err("Invalid request");
 }
