@@ -103,6 +103,57 @@
   },
   {
     "type": "get",
+    "url": "/api.php?q=checkSignature",
+    "title": "17. checkSignature",
+    "name": "checkSignature",
+    "group": "API",
+    "description": "<p>Checks a signature against a public key</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": true,
+            "field": "public_key",
+            "description": "<p>Public key</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": true,
+            "field": "signature",
+            "description": "<p>signature</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": true,
+            "field": "data",
+            "description": "<p>signed data</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "boolean",
+            "optional": false,
+            "field": "data",
+            "description": "<p>true or false</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "./api.php",
+    "groupTitle": "API"
+  },
+  {
+    "type": "get",
     "url": "/api.php?q=currentBlock",
     "title": "10. currentBlock",
     "name": "currentBlock",
@@ -251,6 +302,50 @@
   },
   {
     "type": "get",
+    "url": "/api.php?q=getAlias",
+    "title": "189. getAlias",
+    "name": "getAlias",
+    "group": "API",
+    "description": "<p>Returns the alias of an account</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": true,
+            "field": "public_key",
+            "description": "<p>Public key</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": true,
+            "field": "account",
+            "description": "<p>Account id / address</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "string",
+            "optional": false,
+            "field": "data",
+            "description": "<p>alias</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "./api.php",
+    "groupTitle": "API"
+  },
+  {
+    "type": "get",
     "url": "/api.php?q=getBalance",
     "title": "04. getBalance",
     "name": "getBalance",
@@ -272,6 +367,13 @@
             "optional": true,
             "field": "account",
             "description": "<p>Account id / address</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": true,
+            "field": "alias",
+            "description": "<p>alias</p>"
           }
         ]
       }
@@ -867,6 +969,30 @@
   },
   {
     "type": "get",
+    "url": "/api.php?q=masternodes",
+    "title": "18. masternodes",
+    "name": "masternodes",
+    "group": "API",
+    "description": "<p>Returns all the masternode data</p>",
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "boolean",
+            "optional": false,
+            "field": "data",
+            "description": "<p>masternode date</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "./api.php",
+    "groupTitle": "API"
+  },
+  {
+    "type": "get",
     "url": "/api.php?q=mempoolSize",
     "title": "15. mempoolSize",
     "name": "mempoolSize",
@@ -1262,6 +1388,24 @@
       {
         "title": "Example usage:",
         "content": "php util.php clean",
+        "type": "cli"
+      }
+    ],
+    "version": "0.0.0",
+    "filename": "./util.php",
+    "groupTitle": "UTIL"
+  },
+  {
+    "type": "php util.php",
+    "url": "clean-blacklist",
+    "title": "Clean-Blacklist",
+    "name": "clean_blacklist",
+    "group": "UTIL",
+    "description": "<p>Removes all the peers from blacklist</p>",
+    "examples": [
+      {
+        "title": "Example usage:",
+        "content": "php util.php clean-blacklist",
         "type": "cli"
       }
     ],
