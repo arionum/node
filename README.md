@@ -19,7 +19,7 @@ The Arionum (ARO) cryptocurrency node.
 - MySQL/MariaDB
 
 1. Install MySQL or MariaDB and create a database and a user.
-2. Edit `include/config.inc.php` and set the DB login data
+2. Rename `include/config-sample.inc.php` to  `include/config.inc.php` and set the DB login data
 3. Change permissions to tmp and `tmp/db-update` to 777 (`chmod 777 tmp -R`)
 4. Access the http://ip-or-domain and refresh once
 
