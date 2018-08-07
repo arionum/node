@@ -24,7 +24,7 @@ class Block
 
         // create the block data and check it against the signature
         $info = "{$generator}-{$height}-{$date}-{$nonce}-{$json}-{$difficulty}-{$argon}";
-        _log($info,3);
+        // _log($info,3);
         if (!$bootstrapping) {
             if (!$acc->check_signature($info, $signature, $public_key)) {
                 _log("Block signature check failed");
