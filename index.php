@@ -185,6 +185,10 @@ $current = $block->current();
             background-color: #209cee;
             color: #fff;
         }
+        .tag:not(body).is-danger {
+            background-color: #f48f42;
+            color: #fff;
+        }
 
         .tag:not(body).is-success {
             background-color: #23d160;
@@ -294,10 +298,18 @@ $current = $block->current();
                 </div>
                 <div class="control">
                     <div class="tags has-addons">
+                        <strong class="tag is-danger">Version</strong>
+                        <span class="tag is-light"><?= VERSION; ?></span>
+                    </div>
+                </div>
+
+                <div class="control">
+                    <div class="tags has-addons">
                         <strong class="tag is-info">Public API</strong>
                         <span class="tag is-light"><?= ($_config['public_api']) ? 'yes' : 'no'; ?></span>
                     </div>
                 </div>
+
                 <div class="control">
                     <a class="tags is-dark" href="./doc/" target="_blank">
                         <strong class="tag is-info">Documentation</strong>
