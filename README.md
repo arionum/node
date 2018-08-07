@@ -5,11 +5,11 @@ The Arionum (ARO) cryptocurrency node.
 ## Install
 
 **Hardware Requirements:**
-
+```
 2GB RAM
 1 CPU Core
 50GB DISK
-
+```
 **Requirements:**
 
 - PHP 7.2
