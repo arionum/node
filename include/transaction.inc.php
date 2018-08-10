@@ -85,7 +85,7 @@ class Transaction
             }
     
             // add the transactions to mempool
-            if ($x['version'] > 0 && $x['version']<=1000) {
+            if ($x['version'] > 0 && $x['version']<=110) {
                 $this->add_mempool($x);
             }
             $res = $db->run("DELETE FROM transactions WHERE id=:id", [":id" => $x['id']]);
