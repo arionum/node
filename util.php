@@ -447,6 +447,8 @@ elseif ($cmd == 'get-address') {
 } elseif ($cmd == 'clean-blacklist') {
    $db->run("UPDATE peers SET blacklisted=0, fails=0, stuckfail=0");
    echo "All the peers have been removed from the blacklist\n";
+
+
 } else {
     echo "Invalid command\n";
 }
