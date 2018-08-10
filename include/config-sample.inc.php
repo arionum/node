@@ -83,6 +83,9 @@ $_config['allow_hostname_change'] = false;
 // Rebroadcast local transactions when running sanity
 $_config['sanity_rebroadcast_locals'] = true;
 
+// Get more peers?
+$_config['get_more_peers']=true;
+
 /*
 |--------------------------------------------------------------------------
 | Logging Configuration

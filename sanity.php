@@ -314,7 +314,8 @@ foreach ($r as $x) {
     _log("Contacting peer $x[hostname]");
     $url = $x['hostname']."/peer.php?q=";
     // get their peers list
-    $data = peer_post($url."getPeers", [], 5);
+if($_config['get_more_peers']==true){ 
+   $data = peer_post($url."getPeers", [], 5);
     if ($data === false) {
         _log("Peer $x[hostname] unresponsive");
         // if the peer is unresponsive, mark it as failed and blacklist it for a while
@@ -324,7 +325,6 @@ foreach ($r as $x) {
         );
         continue;
     }
-
     $i = 0;
     foreach ($data as $peer) {
         // store the hostname as md5 hash, for easier checking
@@ -371,7 +371,7 @@ foreach ($r as $x) {
             }
         }
     }
-
+}
 
     // get the current block and check it's blockchain
     $data = peer_post($url."currentBlock", [], 5);
