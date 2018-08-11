@@ -444,7 +444,9 @@ class Block
         foreach ($ban as $b) {
             $this->masternode_log($b['public_key'], $current['height'], $current['id']);
             _log("Blacklisting masternode - $i $b[public_key]", 2);
-            $db->run("UPDATE masternode SET fails=fails+1, blacklist=:blacklist WHERE public_key=:public_key", [":public_key"=>$b['public_key'], ":blacklist"=> $current['height']+(($b['fails']+1)*10)]);
+		$btime=10;
+		if($current['height']>83000) $btime=360;
+            $db->run("UPDATE masternode SET fails=fails+1, blacklist=:blacklist WHERE public_key=:public_key", [":public_key"=>$b['public_key'], ":blacklist"=> $current['height']+(($b['fails']+1)*$btime)]);
             $i++;
         }
     }
