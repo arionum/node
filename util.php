@@ -447,6 +447,27 @@ elseif ($cmd == 'get-address') {
 } elseif ($cmd == 'clean-blacklist') {
    $db->run("UPDATE peers SET blacklisted=0, fails=0, stuckfail=0");
    echo "All the peers have been removed from the blacklist\n";
+}elseif($cmd == 'resync-accounts'){
+// resyncs the balance on all accounts
+
+ // lock table to avoid race conditions on blocks
+        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE");
+
+$r=$db->run("SELECT * FROM accounts");
+foreach($r as $x){
+        $alias=$x['alias'];
+        if(empty($alias)) $alias="A";
+        $rec=$db->single("SELECT SUM(val) FROM transactions WHERE (dst=:id or dst=:alias) AND (height<80000 OR (version!=100 AND version!=103)) and version<111",[":id"=>$x['id'], ":alias"=>$alias]);
+        $spent=$db->single("SELECT SUM(val+fee) FROM transactions WHERE public_key=:pub AND version>0",[":pub"=>$x['public_key']]);
+        if($spent==false) $spent=0;
+        $balance=round(($rec-$spent),8);
+        if($x['balance']!=$balance){
+                echo "rec: $rec, spent: $spent, bal: $x[balance], should be: $balance - $x[id] $x[public_key]\n";
+                $db->run("UPDATE accounts SET balance=:bal WHERE id=:id",[":id"=>$x['id'], ":bal"=>$balance]);
+        }
+}
+$db->exec("UNLOCK TABLES");
+echo "All done";
 
 
 } else {
