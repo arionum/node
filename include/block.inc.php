@@ -37,11 +37,32 @@ class Block
             }
         }
         // lock table to avoid race conditions on blocks
-        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE");
+        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE");
 
         $reward = $this->reward($height, $data);
 
         $msg = '';
+
+ if($height>=80460){
+                //reward the masternode
+
+	 $mn_winner=$db->single(
+                "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 1",
+                [":current"=>$height, ":start"=>$height-360]
+            );
+	_log("MN Winner: $mn_winner",2);
+	if($mn_winner!==false){
+		$mn_reward=round(0.33*$reward,8);
+		$reward=round($reward-$mn_reward,8);
+		$reward=number_format($reward,8,".","");
+		$mn_reward=number_format($mn_reward,8,".","");
+		_log("MN Reward: $mn_reward",2);
+	}
+
+}
+
+
+
 
         // the reward transaction
         $transaction = [
@@ -68,6 +89,8 @@ class Block
         // insert the block into the db
         $db->beginTransaction();
         $total = count($data);
+
+
         $bind = [
             ":id"           => $hash,
             ":generator"    => $generator,
@@ -94,10 +117,33 @@ class Block
         // insert the reward transaction in the db
         $trx->add($hash, $height, $transaction);
 
+if($mn_winner!==false){
+	$db->run("UPDATE accounts SET balance=balance+:bal WHERE public_key=:pub",[":pub"=>$mn_winner, ":bal"=>$mn_reward]);
+	$bind = [
+            ":id"         => hex2coin(hash("sha512", "mn".$hash.$height.$mn_winner)),
+            ":public_key" => $public_key,
+            ":height"     => $height,
+            ":block"      => $hash,
+            ":dst"        => $acc->get_address($mn_winner),
+            ":val"        => $mn_reward,
+            ":fee"        => 0,
+            ":signature"  => $reward_signature,
+            ":version"    => 0,
+            ":date"       => $date,
+            ":message"    => 'masternode',
+        ];
+        $res = $db->run(
+            "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
+            $bind
+        );
+$this->reset_fails_masternodes($mn_winner, $height, $hash);
+
+}
+
         // parse the block's transactions and insert them to db
         $res = $this->parse_block($hash, $height, $data, false, $bootstrapping);
 
-        if (($height-1)%3==2 && $height>=80000) {
+        if (($height-1)%3==2 && $height>=80000&&$height<80460) {
             $this->blacklist_masternodes();
             $this->reset_fails_masternodes($public_key, $height, $hash);
         }
@@ -385,6 +431,25 @@ class Block
 
         // reward transaction and signature
         $reward = $this->reward($height, $data);
+
+if($height>=80460){
+                //reward the masternode
+	global $db;
+         $mn_winner=$db->single(
+                "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 1",
+                [":current"=>$height, ":start"=>$height-360]
+            );
+        _log("MN Winner: $mn_winner",2);
+        if($mn_winner!==false){
+                $mn_reward=round(0.33*$reward,8);
+                $reward=round($reward-$mn_reward,8);
+                $reward=number_format($reward,8,".","");
+                $mn_reward=number_format($mn_reward,8,".","");
+                _log("MN Reward: $mn_reward",2);
+        }
+
+}
+
         $msg = '';
         $transaction = [
             "src"        => $generator,
@@ -501,7 +566,19 @@ class Block
                 _log("Block below 10800, using 16MB argon", 2);
                 $argon = '$argon2i$v=19$m=16384,t=4,p=4'.$argon;
             }
-        } else {
+   
+	} elseif($current_height>=80460){
+		if ($current_height%2==0) {
+                	// cpu mining
+                	_log("CPU Mining - $current_height", 2);
+                	$argon = '$argon2i$v=19$m=524288,t=1,p=1'.$argon;
+		} else {
+               		 // gpu mining
+        	        _log("GPU Mining - $current_height", 2);
+                	$argon = '$argon2i$v=19$m=16384,t=4,p=4'.$argon;
+		}		
+
+     } else {
             _log("Block > 80000 - $current_height", 2);
             if ($current_height%3==0) {
                 // cpu mining
@@ -880,7 +957,7 @@ class Block
 
         // the reward transaction always has version 0
         $gen = $db->row(
-            "SELECT public_key, signature FROM transactions WHERE  version=0 AND block=:block",
+            "SELECT public_key, signature FROM transactions WHERE  version=0 AND block=:block AND message=''",
             [":block" => $block['id']]
         );
         $block['public_key'] = $gen['public_key'];

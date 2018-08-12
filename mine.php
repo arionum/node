@@ -56,6 +56,12 @@ if ($q == "info") {
             $argon_threads=1;
             $argon_time=1;
         }
+     } elseif($current_height>=80460&&$current_height%2==0){
+	          $argon_mem=524288;
+            $argon_threads=1;
+            $argon_time=1;
+
+	
     } else {
         if ($current_height%3==0) {
             $argon_mem=524288;

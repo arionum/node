@@ -69,7 +69,7 @@ if (file_exists("tmp/db-update")) {
     $ramb=explode("kB",$ramz[1]);
     $ram=intval(trim($ramb[0]));
     if($ram<1700000) {
-        die("The node requires at least 2 GB of RAM");
+        #die("The node requires at least 2 GB of RAM");
     }
     if($_config['masternode']==true && $ram<7000000){
         die("The masternode require at least 8GB of RAM");
