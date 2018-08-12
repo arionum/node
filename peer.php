@@ -252,7 +252,10 @@ elseif ($q == "currentBlock") {
 } // return a specific block, used in syncing
 elseif ($q == "getBlock") {
     $height = intval($data['height']);
-
+	if($_config['masternode'] ==true){
+$current = $block->current();    
+if($current['height']%3==2) api_err('masternode block');
+}
     $export = $block->export("", $height);
     if (!$export) {
         api_err("invalid-block");
@@ -262,6 +265,10 @@ elseif ($q == "getBlock") {
 // returns X block starting at height,  used in syncing
 
     $height = intval($data['height']);
+if($_config['masternode'] ==true){                    
+ $current = $block->current();  
+  if($current['height']%3==2) api_err('masternode block');   
+    }                      
 
     $r = $db->run(
         "SELECT id,height FROM blocks WHERE height>=:height ORDER by height ASC LIMIT 100",
