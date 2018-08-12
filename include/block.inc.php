@@ -430,10 +430,19 @@ class Block
         $last=$this->get($current['height']-1);
         $total_time=$current['date']-$last['date'];
         _log("blacklist total time $total_time");
-        if ($total_time<=600) {
+        if ($total_time<=600&&$current['height']<80500) {
             return;
         }
-        $tem=floor($total_time/600);
+	if($current['height']>=80500&&$total_time<360){
+		return false;
+	}
+	if($current['height']>=80500){
+		$total_time-=360;
+		$tem=floor($total_time/120)+1;
+		if($tem>5) $tem=5;
+	} else {
+        	$tem=floor($total_time/600);
+	}
         _log("We have masternodes to blacklist - $tem", 2);
         $ban=$db->run(
             "SELECT public_key, blacklist, fails, last_won FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 0,$tem",
@@ -537,17 +546,23 @@ class Block
                     }
                     // if 10 mins have passed, try to give the block to the next masternode and do this every 10mins
                     _log("Last block time: $last_time, difference: ".($time-$last_time), 3);
-                    if ($time-$last_time>600) {
+                    if (($time-$last_time>600&&$current_height<80500)||($time-$last_time>360&&$current_height>=80500)) {
                         _log("Current public_key $public_key", 3);
-                        $tem=floor(($time-$last_time)/600);
-                        
+			if($current_height>=80500){
+				$total_time=$time-$last_time;
+				$total_time-=360;
+				$tem=floor($total_time/120)+1;
+			
+			} else {
+                        	$tem=floor(($time-$last_time)/600);
+                        }
                         $winner=$db->single(
                             "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT $tem,1",
                             [":current"=>$current_height, ":start"=>$current_height-360]
                         );
                         _log("Moving to the next masternode - $tem - $winner", 1);
                         // if all masternodes are dead, give the block to gpu
-                        if ($winner===false) {
+                        if ($winner===false||($tem>=5&&$current_height>=80500)) {
                             _log("All masternodes failed, giving the block to gpu", 1);
                             $argon = '$argon2i$v=19$m=16384,t=1,p=1'.$argon;
                         } elseif ($winner==$public_key) {
