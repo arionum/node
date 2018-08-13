@@ -43,7 +43,7 @@ class Block
 
         $msg = '';
 
- if($height>=80460){
+ if($height>=80458){
                 //reward the masternode
 
 	 $mn_winner=$db->single(
@@ -143,7 +143,7 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
         // parse the block's transactions and insert them to db
         $res = $this->parse_block($hash, $height, $data, false, $bootstrapping);
 
-        if (($height-1)%3==2 && $height>=80000&&$height<80460) {
+        if (($height-1)%3==2 && $height>=80000&&$height<80458) {
             $this->blacklist_masternodes();
             $this->reset_fails_masternodes($public_key, $height, $hash);
         }
@@ -229,7 +229,7 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
 
         $height = $current['height'];
 
-        if ($height == 10801) {
+        if ($height == 10801||($height>=80456&&$height<80460)) {
             return 5555555555; //hard fork 10900 resistance, force new difficulty
         }
 
@@ -460,7 +460,7 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
         // reward transaction and signature
         $reward = $this->reward($height, $data);
 
-if($height>=80460){
+if($height>=80458){
                 //reward the masternode
 	global $db;
          $mn_winner=$db->single(
@@ -595,7 +595,7 @@ if($height>=80460){
                 $argon = '$argon2i$v=19$m=16384,t=4,p=4'.$argon;
             }
    
-	} elseif($current_height>=80460){
+	} elseif($current_height>=80458){
 		if ($current_height%2==0) {
                 	// cpu mining
                 	_log("CPU Mining - $current_height", 2);

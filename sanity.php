@@ -510,7 +510,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                 }
                 // check if the block mining data is correct
                 for ($i = $last_good + 1; $i <= $largest_height; $i++) {
-                    if (($i-1)%3==2&&$cblock[$i - 1]['height']<80460) {
+                    if (($i-1)%3==2&&$cblock[$i - 1]['height']<80458) {
                         continue;
                     }
                     if (!$block->mine(
