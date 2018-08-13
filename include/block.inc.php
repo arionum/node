@@ -270,8 +270,8 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
 
             $blks=0;
             $total_time=0;
-            $blk = $db->run("SELECT `date`, height FROM blocks  ORDER by height DESC LIMIT 40");
-            for ($i=0;$i<39;$i++) {
+            $blk = $db->run("SELECT `date`, height FROM blocks  ORDER by height DESC LIMIT 20");
+            for ($i=0;$i<19;$i++) {
                 $ctype=$blk[$i+1]['height']%2;
                 $time=$blk[$i]['date']-$blk[$i+1]['date'];
                 if ($type!=$ctype) {
