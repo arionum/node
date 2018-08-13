@@ -669,7 +669,7 @@ if($height>=80458){
                         // if all masternodes are dead, give the block to gpu
                         if ($winner===false||($tem>=5&&$current_height>=80500)) {
                             _log("All masternodes failed, giving the block to gpu", 1);
-                            $argon = '$argon2i$v=19$m=16384,t=1,p=1'.$argon;
+                            $argon = '$argon2i$v=19$m=16384,t=4,p=4'.$argon;
                         } elseif ($winner==$public_key) {
                             return true;
                         } else {
