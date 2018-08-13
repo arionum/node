@@ -230,7 +230,7 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
         $height = $current['height'];
 
         if ($height == 10801||($height>=80456&&$height<80460)) {
-            return 5555555555; //hard fork 10900 resistance, force new difficulty
+            return "5555555555"; //hard fork 10900 resistance, force new difficulty
         }
 
         // last 20 blocks used to check the block times
