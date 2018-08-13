@@ -494,7 +494,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                     $last_good = $i;
                 }
             }
-            if ($last_good==$current['height']-1&&$last_good%3==2) {
+            if ($last_good==$current['height']-1) {
                 $block->pop(1);
             }
             // if last 10 blocks are good, verify all the blocks
@@ -510,7 +510,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                 }
                 // check if the block mining data is correct
                 for ($i = $last_good + 1; $i <= $largest_height; $i++) {
-                    if (($i-1)%3==2) {
+                    if (($i-1)%3==2&&$cblock[$i - 1]['height']<80460) {
                         continue;
                     }
                     if (!$block->mine(
