@@ -665,7 +665,7 @@ foreach ($f as $x) {
 
 
 //recheck the last blocks
-if ($_config['sanity_recheck_blocks'] > 0 && $_config['testnet'] == false&&1==2) {
+if ($_config['sanity_recheck_blocks'] > 0 && $_config['testnet'] == false) {
     _log("Rechecking blocks");
     $blocks = [];
     $all_blocks_ok = true;
