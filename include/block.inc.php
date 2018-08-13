@@ -117,7 +117,7 @@ class Block
         // insert the reward transaction in the db
         $trx->add($hash, $height, $transaction);
 
-if($mn_winner!==false){
+if($mn_winner!==false&&$height>=80458&&$mn_reward>0){
 	$db->run("UPDATE accounts SET balance=balance+:bal WHERE public_key=:pub",[":pub"=>$mn_winner, ":bal"=>$mn_reward]);
 	$bind = [
             ":id"         => hex2coin(hash("sha512", "mn".$hash.$height.$mn_winner)),
@@ -265,7 +265,7 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
                 // keep current difficulty
                 $dif = $current['difficulty'];
             }
-	}elseif($height>=80450){
+	}elseif($height>=80458){
 		 $type=$height%2;
 		$current=$db->row("SELECT difficulty from blocks ORDER by height DESC LIMIT 1,1");
             $blks=0;
