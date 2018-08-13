@@ -265,6 +265,34 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
                 // keep current difficulty
                 $dif = $current['difficulty'];
             }
+	}elseif($height>=80450){
+		 $type=$height%2;
+
+            $blks=0;
+            $total_time=0;
+            $blk = $db->run("SELECT `date`, height FROM blocks  ORDER by height DESC LIMIT 40");
+            for ($i=0;$i<39;$i++) {
+                $ctype=$blk[$i+1]['height']%2;
+                $time=$blk[$i]['date']-$blk[$i+1]['date'];
+                if ($type!=$ctype) {
+                    continue;
+                }
+                $blks++;
+                $total_time+=$time;
+            }
+            $result=ceil($total_time/$blks);
+            _log("Block time: $result", 3);
+	 if ($result > 260) {
+                $dif = bcmul($current['difficulty'], 1.05);
+            } elseif ($result < 220) {
+                // if lower, decrease by 5%
+                $dif = bcmul($current['difficulty'], 0.95);
+            } else {
+                // keep current difficulty
+                $dif = $current['difficulty'];
+            }
+
+
         } else {
             // hardfork 80000, fix difficulty targetting
 
