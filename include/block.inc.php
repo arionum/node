@@ -267,7 +267,7 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
             }
 	}elseif($height>=80450){
 		 $type=$height%2;
-
+		$current=$db->row("SELECT difficulty from blocks ORDER by height DESC LIMIT 1,1");
             $blks=0;
             $total_time=0;
             $blk = $db->run("SELECT `date`, height FROM blocks  ORDER by height DESC LIMIT 20");
