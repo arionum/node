@@ -463,7 +463,9 @@ foreach($r as $x){
         $balance=round(($rec-$spent),8);
         if($x['balance']!=$balance){
                 echo "rec: $rec, spent: $spent, bal: $x[balance], should be: $balance - $x[id] $x[public_key]\n";
-                $db->run("UPDATE accounts SET balance=:bal WHERE id=:id",[":id"=>$x['id'], ":bal"=>$balance]);
+               if(trim($argv[2])!="check") {
+			$db->run("UPDATE accounts SET balance=:bal WHERE id=:id",[":id"=>$x['id'], ":bal"=>$balance]);
+		}
         }
 }
 $db->exec("UNLOCK TABLES");
