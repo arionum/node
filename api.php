@@ -638,8 +638,9 @@ if ($q == "getAddress") {
      * @apiSuccess {boolean} data masternode date
      */
 
-    $res=$db->run("SELECT * FROM masternode");
-    api_echo($res);
+    $res=$db->run("SELECT * FROM masternode ORDER by public_key ASC");
+
+    api_echo(["masternodes"=>$res, "hash"=>md5(json_encode($res))]);
 } elseif ($q == "getAlias") {
     /**
      * @api {get} /api.php?q=getAlias  189. getAlias
