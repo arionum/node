@@ -93,7 +93,7 @@ elseif ($cmd == 'block-time') {
         }
         $time = $t - $x['date'];
         $t = $x['date'];
-        echo "$x[height] -> $time\n";
+        echo "$x[height]\t\t$time\t\t$x[difficulty]\n";
         $end = $x['date'];
     }
     echo "Average block time: ".ceil(($start - $end) / 100)." seconds\n";
