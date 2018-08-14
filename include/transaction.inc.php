@@ -378,6 +378,7 @@ class Transaction
                     _log("The Masternode IP is invalid", 3);
                     return false;
                 }
+		global $db;
 		$existing=$db->single("SELECT COUNT(1) FROM masternode WHERE public_key=:id or ip=:ip",["id"=>$x['public_key'], ":ip"=>$message]);
 		if($existing!=0){
 			return false;
