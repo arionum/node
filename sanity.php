@@ -248,7 +248,7 @@ $total_active_peers = 0;
 // checking peers
 
 // delete the dead peers
-$db->run("DELETE from peers WHERE fails>100 OR stuckfail>200");
+$db->run("DELETE from peers WHERE fails>40 OR stuckfail>100");
 $r = $db->run("SELECT id,hostname,stuckfail,fails FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP() LIMIT 25");
 
 $total_peers = count($r);
@@ -475,17 +475,17 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                 break;
             }
         } elseif ($data['id'] != $current['id'] && $data['id'] != $most_common) {
-            //if we're not on the same blockchain and also it's not the most common, verify all the blocks on on this blockchain starting at current-10 until current
+            //if we're not on the same blockchain and also it's not the most common, verify all the blocks on on this blockchain starting at current-30 until current
             $invalid = false;
             $last_good = $current['height'];
-            for ($i = $current['height'] - 10; $i < $current['height']; $i++) {
+            for ($i = $current['height'] - 30; $i < $current['height']; $i++) {
                 $data = peer_post($url."getBlock", ["height" => $i]);
                 if ($data === false) {
                     $invalid = true;
                     break;
                 }
                 $ext = $block->get($i);
-                if ($i == $current['height'] - 10 && $ext['id'] != $data['id']) {
+                if ($i == $current['height'] - 30 && $ext['id'] != $data['id']) {
                     $invalid = true;
                     break;
                 }
