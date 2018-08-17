@@ -310,6 +310,7 @@ if ($total_peers == 0 && $_config['testnet'] == false) {
 }
 
 // contact all the active peers
+ $i = 0;
 foreach ($r as $x) {
     _log("Contacting peer $x[hostname]");
     $url = $x['hostname']."/peer.php?q=";
@@ -325,7 +326,6 @@ if($_config['get_more_peers']==true){
         );
         continue;
     }
-    $i = 0;
     foreach ($data as $peer) {
         // store the hostname as md5 hash, for easier checking
         $peer['hostname'] = san_host($peer['hostname']);
