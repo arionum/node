@@ -212,13 +212,14 @@ class Account
         $block = new Block();
         $current = $block->current();
         $public_key = $this->public_key($id);
+	$alias = $this->account2alias($id);
         $limit = intval($limit);
         if ($limit > 100 || $limit < 1) {
             $limit = 100;
         }
         $res = $db->run(
-            "SELECT * FROM transactions WHERE dst=:dst or public_key=:src ORDER by height DESC LIMIT :limit",
-            [":src" => $public_key, ":dst" => $id, ":limit" => $limit]
+            "SELECT * FROM transactions WHERE dst=:dst or public_key=:src or dst=:alias ORDER by height DESC LIMIT :limit",
+            [":src" => $public_key, ":dst" => $id, ":limit" => $limit, ":alias"=>$alias]
         );
 
         $transactions = [];
