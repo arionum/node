@@ -248,8 +248,8 @@ $total_active_peers = 0;
 // checking peers
 
 // delete the dead peers
-$db->run("DELETE from peers WHERE fails>40 OR stuckfail>100");
-$r = $db->run("SELECT id,hostname,stuckfail,fails FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP() LIMIT 25");
+$db->run("DELETE from peers WHERE fails>100 OR stuckfail>100");
+$r = $db->run("SELECT id,hostname,stuckfail,fails FROM peers WHERE reserve=0 AND blacklisted<UNIX_TIMESTAMP() LIMIT 50");
 
 $total_peers = count($r);
 
