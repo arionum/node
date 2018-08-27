@@ -471,7 +471,8 @@ foreach($r as $x){
 $db->exec("UNLOCK TABLES");
 echo "All done";
 
-
+} elseif($cmd == "version"){
+	echo "\n\n".VERSION."\n\n";
 } else {
     echo "Invalid command\n";
 }
