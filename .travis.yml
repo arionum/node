@@ -22,4 +22,4 @@ before_script:
   - travis_retry composer update --no-interaction --prefer-dist
 
 script:
-  - vendor/bin/phpcs -p --standard=psr2 . include
+  - vendor/bin/phpcs -p -l --standard=psr2 . include
