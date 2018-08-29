@@ -526,6 +526,13 @@ elseif ($cmd == 'get-address') {
     $current=$block->current();
     echo "Height:\t\t$current[height]\n";
     echo "Hash:\t\t".md5(json_encode($res))."\n\n";
+
+} elseif ($cmd=='accounts-hash') {
+    $res=$db->run("SELECT * FROM accounts ORDER by public_key ASC");
+    $block=new Block();
+    $current=$block->current();
+    echo "Height:\t\t$current[height]\n";
+    echo "Hash:\t\t".md5(json_encode($res))."\n\n";
 } elseif ($cmd == "version") {
     echo "\n\n".VERSION."\n\n";
 } else {
