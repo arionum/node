@@ -84,7 +84,7 @@ $_config['allow_hostname_change'] = false;
 $_config['sanity_rebroadcast_locals'] = true;
 
 // Get more peers?
-$_config['get_more_peers']=true;
+$_config['get_more_peers'] = true;
 
 /*
 |--------------------------------------------------------------------------

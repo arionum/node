@@ -10,20 +10,20 @@ class Transaction
         $acc = new Account();
         $r = $db->run("SELECT * FROM transactions WHERE block=:block ORDER by `version` ASC", [":block" => $block]);
         foreach ($r as $x) {
-            _log("Reversing transaction $x[id]",4);
+            _log("Reversing transaction $x[id]", 4);
             if (empty($x['src'])) {
                 $x['src'] = $acc->get_address($x['public_key']);
             }
             if ($x['version'] == 2) {
                 // payment sent to alias
-               $rez=$db->run(
+                $rez=$db->run(
                     "UPDATE accounts SET balance=balance-:val WHERE alias=:alias",
                     [":alias" => $x['dst'], ":val" => $x['val']]
                     );
-                    if($rez!=1) {
-                        _log("Update alias balance minus failed",3);
-                        return false;
-                    }
+                if ($rez!=1) {
+                    _log("Update alias balance minus failed", 3);
+                    return false;
+                }
             } else {
                 // other type of transactions
        
@@ -32,8 +32,8 @@ class Transaction
                     "UPDATE accounts SET balance=balance-:val WHERE id=:id",
                     [":id" => $x['dst'], ":val" => $x['val']]
                     );
-                    if($rez!=1) {
-                        _log("Update accounts balance minus failed",3);
+                    if ($rez!=1) {
+                        _log("Update accounts balance minus failed", 3);
                         return false;
                     }
                 }
@@ -44,8 +44,8 @@ class Transaction
                     "UPDATE accounts SET balance=balance+:val WHERE id=:id",
                     [":id" => $x['src'], ":val" => $x['val'] + $x['fee']]
                 );
-                if($rez!=1) {
-                    _log("Update account balance plus failed",3);
+                if ($rez!=1) {
+                    _log("Update account balance plus failed", 3);
                     return false;
                 }
             }
@@ -55,8 +55,8 @@ class Transaction
                     "UPDATE accounts SET alias=NULL WHERE id=:id",
                     [":id" => $x['src']]
                 );
-                if($rez!=1) {
-                    _log("Clear alias failed",3);
+                if ($rez!=1) {
+                    _log("Clear alias failed", 3);
                     return false;
                 }
             }
@@ -65,8 +65,8 @@ class Transaction
             if ($x['version']>=100&&$x['version']<110&&$x['height']>=80000) {
                 if ($x['version']==100) {
                     $rez=$db->run("DELETE FROM masternode WHERE public_key=:public_key", [':public_key'=>$x['public_key']]);
-                    if($rez!=1) {
-                        _log("Delete from masternode failed",3);
+                    if ($rez!=1) {
+                        _log("Delete from masternode failed", 3);
                         return false;
                     }
                 } elseif ($x['version']==101) {
@@ -74,10 +74,8 @@ class Transaction
                         "UPDATE masternode SET status=1 WHERE public_key=:public_key",
                     [':public_key'=>$x['public_key']]
                     );
-
                 } elseif ($x['version']==102) {
                     $rez=$db->run("UPDATE masternode SET status=0 WHERE public_key=:public_key", [':public_key'=>$x['public_key']]);
-
                 } elseif ($x['version']==103) {
                     $mnt=$db->row("SELECT height, `message` FROM transactions WHERE version=100 AND public_key=:public_key ORDER by height DESC LIMIT 1", [":public_key"=>$x['public_key']]);
                     $vers=$db->single(
@@ -95,31 +93,30 @@ class Transaction
                         "INSERT into masternode SET `public_key`=:public_key, `height`=:height, `ip`=:ip, `status`=:status",
                     [":public_key"=>$x['public_key'], ":height"=>$mnt['height'], ":ip"=>$mnt['message'], ":status"=>$status]
                     );
-                    if($rez!=1) {
-                        _log("Insert into masternode failed",3);
+                    if ($rez!=1) {
+                        _log("Insert into masternode failed", 3);
                         return false;
                     }
                     $rez=$db->run("UPDATE accounts SET balance=balance-100000 WHERE public_key=:public_key", [':public_key'=>$x['public_key']]);
-                    if($rez!=1) {
-                        _log("Update masternode balance failed",3);
+                    if ($rez!=1) {
+                        _log("Update masternode balance failed", 3);
                         return false;
                     }
                 }
             }
             // internal masternode history
             if ($x['version']==111) {
-                _log("Masternode reverse: $x[message]",4);
+                _log("Masternode reverse: $x[message]", 4);
                 $m=explode(",", $x['message']);
 
                 $rez=$db->run(
                     "UPDATE masternode SET fails=:fails, blacklist=:blacklist, last_won=:last_won WHERE public_key=:public_key",
                 [":public_key"=>$x['public_key'], ":blacklist"=> $m[0], ":fails"=>$m[2], ":last_won"=>$m[1]]
                 );
-                if($rez!=1) {
-                    _log("Update masternode log failed",3);
+                if ($rez!=1) {
+                    _log("Update masternode log failed", 3);
                     return false;
                 }
-
             }
     
             // add the transactions to mempool
@@ -128,7 +125,7 @@ class Transaction
             }
             $res = $db->run("DELETE FROM transactions WHERE id=:id", [":id" => $x['id']]);
             if ($res != 1) {
-                _log("Delete transaction failed",3);
+                _log("Delete transaction failed", 3);
                 return false;
             }
         }

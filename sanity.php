@@ -603,9 +603,9 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
         _log("Rechecking reward transactions");
         $current = $block->current();
         $rwpb=$db->single("SELECT COUNT(1) FROM transactions WHERE version=0 AND message=''");
-        if($rwpb!=$current['height']){
-           $failed=$db->single("SELECT blocks.height FROM blocks LEFT JOIN transactions ON transactions.block=blocks.id and transactions.version=0 and transactions.message='' WHERE transactions.height is NULL ORDER by blocks.height ASC LIMIT 1");
-            if($failed>1){
+        if ($rwpb!=$current['height']) {
+            $failed=$db->single("SELECT blocks.height FROM blocks LEFT JOIN transactions ON transactions.block=blocks.id and transactions.version=0 and transactions.message='' WHERE transactions.height is NULL ORDER by blocks.height ASC LIMIT 1");
+            if ($failed>1) {
                 _log("Found failed block - $faield");
                 $block->delete($failed);
                 $block_parse_failed==false;
@@ -613,12 +613,11 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
         }
     }
     if ($block_parse_failed==true||$argv[1]=="resync") {
-       
         $last_resync=$db->single("SELECT val FROM config WHERE cfg='last_resync'");
         if ($last_resync<time()-(3600*24)||$argv[1]=="resync") {
             if ($current['date']<time()-(3600*72)||$argv[1]=="resync") {
                 $to_remove=3000;
-                if(intval($argv[2])>0){
+                if (intval($argv[2])>0) {
                     $to_remove=intval($argv[2]);
                 }
                 _log("Removing $to_remove blocks, the blockchain is stale.");
@@ -655,7 +654,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                     }
                 }
                 $current = $block->current();
-                $db->run("DELETE FROM masternode WHERE height>:h",[":h"=>$current['height']]);
+                $db->run("DELETE FROM masternode WHERE height>:h", [":h"=>$current['height']]);
                 $db->exec("UNLOCK TABLES");
             }
         }
