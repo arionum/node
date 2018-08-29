@@ -39,6 +39,10 @@ function api_echo($data)
 // log function, shows only in cli atm
 function _log($data, $verbosity = 0)
 {
+    global $_config;
+    if ($_config['log_verbosity'] < $verbosity) {
+        return;
+    }
     $date = date("[Y-m-d H:i:s]");
     $trace = debug_backtrace();
     $loc = count($trace) - 1;
@@ -56,7 +60,6 @@ function _log($data, $verbosity = 0)
     if (php_sapi_name() === 'cli') {
         echo $res;
     }
-    global $_config;
     if ($_config['enable_logging'] == true && $_config['log_verbosity'] >= $verbosity) {
         @file_put_contents($_config['log_file'], $res, FILE_APPEND);
     }

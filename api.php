@@ -670,6 +670,23 @@ if ($q == "getAddress") {
     $account = san($account);
     
     api_echo($acc->account2alias($account));
+} elseif ($q=="sanity"){
+    $sanity=false;
+    if(file_exists("tmp/sanity-lock")) {
+        $sanity=true;
+    }    
+    $last_sanity=$db->single("SELECT val FROM config WHERE cfg='sanity_last'");
+    $sanity_sync=$db->single("SELECT val FROM config WHERE cfg='sanity_sync'");
+    api_echo(["sanity_running"=>$sanity,"last_sanity"=>$last_sanity, "sanity_sync"=>$sanity_sync]);
+} elseif ($q=="node-info"){
+    $dbversion=$db->single("SELECT val FROM config WHERE cfg='dbversion'");
+    $hostname=$db->single("SELECT val FROM config WHERE cfg='hostname'");
+    $acc=$db->single("SELECT COUNT(1) FROM accounts");
+    $tr=$db->single("SELECT COUNT(1) FROM transactions");
+    $mns=$db->single("SELECT COUNT(1) FROM masternode");
+    $mempool=$db->single("SELECT COUNT(1) FROM mempool");
+    api_echo(["hostname"=>$hostname, "version"=>VERSION,"dbversion"=>$dbversion, "accounts"=>$acc, "transactions"=>$tr, "mempool"=>$mempool, "masternodes"=>$mns]);
+    
 } else {
     api_err("Invalid request");
 }

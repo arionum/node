@@ -43,23 +43,22 @@ class Block
 
         $msg = '';
 
- if($height>=80458){
-                //reward the masternode
+        if ($height>=80458) {
+            //reward the masternode
 
-	 $mn_winner=$db->single(
+            $mn_winner=$db->single(
                 "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 1",
                 [":current"=>$height, ":start"=>$height-360]
             );
-	_log("MN Winner: $mn_winner",2);
-	if($mn_winner!==false){
-		$mn_reward=round(0.33*$reward,8);
-		$reward=round($reward-$mn_reward,8);
-		$reward=number_format($reward,8,".","");
-		$mn_reward=number_format($mn_reward,8,".","");
-		_log("MN Reward: $mn_reward",2);
-	}
-
-}
+            _log("MN Winner: $mn_winner", 2);
+            if ($mn_winner!==false) {
+                $mn_reward=round(0.33*$reward, 8);
+                $reward=round($reward-$mn_reward, 8);
+                $reward=number_format($reward, 8, ".", "");
+                $mn_reward=number_format($mn_reward, 8, ".", "");
+                _log("MN Reward: $mn_reward", 2);
+            }
+        }
 
 
 
@@ -115,11 +114,17 @@ class Block
         }
 
         // insert the reward transaction in the db
-        $trx->add($hash, $height, $transaction);
-
-if($mn_winner!==false&&$height>=80458&&$mn_reward>0){
-	$db->run("UPDATE accounts SET balance=balance+:bal WHERE public_key=:pub",[":pub"=>$mn_winner, ":bal"=>$mn_reward]);
-	$bind = [
+        $res=$trx->add($hash, $height, $transaction);
+        if ($res == false) {
+            // rollback and exit if it fails
+            _log("Reward DB insert failed");
+            $db->rollback();
+            $db->exec("UNLOCK TABLES");
+            return false;
+        }
+        if ($mn_winner!==false&&$height>=80458&&$mn_reward>0) {
+            $db->run("UPDATE accounts SET balance=balance+:bal WHERE public_key=:pub", [":pub"=>$mn_winner, ":bal"=>$mn_reward]);
+            $bind = [
             ":id"         => hex2coin(hash("sha512", "mn".$hash.$height.$mn_winner)),
             ":public_key" => $public_key,
             ":height"     => $height,
@@ -132,13 +137,27 @@ if($mn_winner!==false&&$height>=80458&&$mn_reward>0){
             ":date"       => $date,
             ":message"    => 'masternode',
         ];
-        $res = $db->run(
+            $res = $db->run(
             "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
             $bind
         );
-$this->reset_fails_masternodes($mn_winner, $height, $hash);
-
-}
+            if ($res != 1) {
+                // rollback and exit if it fails
+                _log("Masternode reward DB insert failed");
+                $db->rollback();
+                $db->exec("UNLOCK TABLES");
+                return false;
+            }
+            $res=$this->reset_fails_masternodes($mn_winner, $height, $hash);
+            if (!$res) {
+                
+                    // rollback and exit if it fails
+                _log("Masternode log DB insert failed");
+                $db->rollback();
+                $db->exec("UNLOCK TABLES");
+                return false;
+            }
+        }
 
         // parse the block's transactions and insert them to db
         $res = $this->parse_block($hash, $height, $data, false, $bootstrapping);
@@ -164,10 +183,17 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
     {
         global $db;
         $res=$this->masternode_log($public_key, $height, $hash);
-        
-        if ($res) {
-            $db->run("UPDATE masternode SET last_won=:last_won,fails=0 WHERE public_key=:public_key", [":public_key"=>$public_key, ":last_won"=>$height]);
+        if ($res===5) {
+            return false;
         }
+
+        if ($res) {
+            $rez=$db->run("UPDATE masternode SET last_won=:last_won,fails=0 WHERE public_key=:public_key", [":public_key"=>$public_key, ":last_won"=>$height]);
+            if ($rez!=1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     //logs the current masternode status
@@ -184,12 +210,15 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
         $id = hex2coin(hash("sha512", "resetfails-$hash-$height-$public_key"));
         $msg="$mn[blacklist],$mn[last_won],$mn[fails]";
         
-        $db->run(
+        $res=$db->run(
         
             "INSERT into transactions SET id=:id, block=:block, height=:height, dst=:dst, val=0, fee=0, signature=:sig, version=111, message=:msg, date=:date, public_key=:public_key",
         [":id"=>$id, ":block"=>$hash, ":height"=>$height, ":dst"=>$hash, ":sig"=>$hash, ":msg"=>$msg, ":date"=>time(), ":public_key"=>$public_key]
         
         );
+        if ($res!=1) {
+            return 5;
+        }
         return true;
     }
 
@@ -265,12 +294,12 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
                 // keep current difficulty
                 $dif = $current['difficulty'];
             }
-	}elseif($height>=80458){
-		 $type=$height%2;
-		$current=$db->row("SELECT difficulty from blocks WHERE height<=:h ORDER by height DESC LIMIT 1,1",[":h"=>$height]);
+        } elseif ($height>=80458) {
+            $type=$height%2;
+            $current=$db->row("SELECT difficulty from blocks WHERE height<=:h ORDER by height DESC LIMIT 1,1", [":h"=>$height]);
             $blks=0;
             $total_time=0;
-            $blk = $db->run("SELECT `date`, height FROM blocks WHERE height<=:h  ORDER by height DESC LIMIT 20",[":h"=>$height]);
+            $blk = $db->run("SELECT `date`, height FROM blocks WHERE height<=:h  ORDER by height DESC LIMIT 20", [":h"=>$height]);
             for ($i=0;$i<19;$i++) {
                 $ctype=$blk[$i+1]['height']%2;
                 $time=$blk[$i]['date']-$blk[$i+1]['date'];
@@ -282,7 +311,7 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
             }
             $result=ceil($total_time/$blks);
             _log("Block time: $result", 3);
-	 if ($result > 260) {
+            if ($result > 260) {
                 $dif = bcmul($current['difficulty'], 1.05);
             } elseif ($result < 220) {
                 // if lower, decrease by 5%
@@ -291,8 +320,6 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
                 // keep current difficulty
                 $dif = $current['difficulty'];
             }
-
-
         } else {
             // hardfork 80000, fix difficulty targetting
 
@@ -301,7 +328,7 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
             $type=$height%3;
             // for mn, we use gpu diff
             if ($type == 2) {
-                 return $current['difficulty'];
+                return $current['difficulty'];
             }
 
             $blks=0;
@@ -398,8 +425,8 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
         }
         $acc = new Account();
 
-        if($data['date']>time()+30){
-            _log("Future block - $data[date] $data[public_key]",2);
+        if ($data['date']>time()+30) {
+            _log("Future block - $data[date] $data[public_key]", 2);
             return false;
         }
 
@@ -460,23 +487,22 @@ $this->reset_fails_masternodes($mn_winner, $height, $hash);
         // reward transaction and signature
         $reward = $this->reward($height, $data);
 
-if($height>=80458){
-                //reward the masternode
-	global $db;
-         $mn_winner=$db->single(
+        if ($height>=80458) {
+            //reward the masternode
+            global $db;
+            $mn_winner=$db->single(
                 "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 1",
                 [":current"=>$height, ":start"=>$height-360]
             );
-        _log("MN Winner: $mn_winner",2);
-        if($mn_winner!==false){
-                $mn_reward=round(0.33*$reward,8);
-                $reward=round($reward-$mn_reward,8);
-                $reward=number_format($reward,8,".","");
-                $mn_reward=number_format($mn_reward,8,".","");
-                _log("MN Reward: $mn_reward",2);
+            _log("MN Winner: $mn_winner", 2);
+            if ($mn_winner!==false) {
+                $mn_reward=round(0.33*$reward, 8);
+                $reward=round($reward-$mn_reward, 8);
+                $reward=number_format($reward, 8, ".", "");
+                $mn_reward=number_format($mn_reward, 8, ".", "");
+                _log("MN Reward: $mn_reward", 2);
+            }
         }
-
-}
 
         $msg = '';
         $transaction = [
@@ -526,16 +552,18 @@ if($height>=80458){
         if ($total_time<=600&&$current['height']<80500) {
             return;
         }
-	if($current['height']>=80500&&$total_time<360){
-		return false;
-	}
-	if($current['height']>=80500){
-		$total_time-=360;
-		$tem=floor($total_time/120)+1;
-		if($tem>5) $tem=5;
-	} else {
-        	$tem=floor($total_time/600);
-	}
+        if ($current['height']>=80500&&$total_time<360) {
+            return false;
+        }
+        if ($current['height']>=80500) {
+            $total_time-=360;
+            $tem=floor($total_time/120)+1;
+            if ($tem>5) {
+                $tem=5;
+            }
+        } else {
+            $tem=floor($total_time/600);
+        }
         _log("We have masternodes to blacklist - $tem", 2);
         $ban=$db->run(
             "SELECT public_key, blacklist, fails, last_won FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 0,$tem",
@@ -546,8 +574,10 @@ if($height>=80458){
         foreach ($ban as $b) {
             $this->masternode_log($b['public_key'], $current['height'], $current['id']);
             _log("Blacklisting masternode - $i $b[public_key]", 2);
-		$btime=10;
-		if($current['height']>83000) $btime=360;
+            $btime=10;
+            if ($current['height']>83000) {
+                $btime=360;
+            }
             $db->run("UPDATE masternode SET fails=fails+1, blacklist=:blacklist WHERE public_key=:public_key", [":public_key"=>$b['public_key'], ":blacklist"=> $current['height']+(($b['fails']+1)*$btime)]);
             $i++;
         }
@@ -559,7 +589,7 @@ if($height>=80458){
         global $_config;
    
         // invalid future blocks
-        if($time>time()+30){
+        if ($time>time()+30) {
             return false;
         }
 
@@ -594,19 +624,17 @@ if($height>=80458){
                 _log("Block below 10800, using 16MB argon", 2);
                 $argon = '$argon2i$v=19$m=16384,t=4,p=4'.$argon;
             }
-   
-	} elseif($current_height>=80458){
-		if ($current_height%2==0) {
-                	// cpu mining
-                	_log("CPU Mining - $current_height", 2);
-                	$argon = '$argon2i$v=19$m=524288,t=1,p=1'.$argon;
-		} else {
-               		 // gpu mining
-        	        _log("GPU Mining - $current_height", 2);
-                	$argon = '$argon2i$v=19$m=16384,t=4,p=4'.$argon;
-		}		
-
-     } else {
+        } elseif ($current_height>=80458) {
+            if ($current_height%2==0) {
+                // cpu mining
+                _log("CPU Mining - $current_height", 2);
+                $argon = '$argon2i$v=19$m=524288,t=1,p=1'.$argon;
+            } else {
+                // gpu mining
+                _log("GPU Mining - $current_height", 2);
+                $argon = '$argon2i$v=19$m=16384,t=4,p=4'.$argon;
+            }
+        } else {
             _log("Block > 80000 - $current_height", 2);
             if ($current_height%3==0) {
                 // cpu mining
@@ -653,13 +681,12 @@ if($height>=80458){
                     _log("Last block time: $last_time, difference: ".($time-$last_time), 3);
                     if (($time-$last_time>600&&$current_height<80500)||($time-$last_time>360&&$current_height>=80500)) {
                         _log("Current public_key $public_key", 3);
-			if($current_height>=80500){
-				$total_time=$time-$last_time;
-				$total_time-=360;
-				$tem=floor($total_time/120)+1;
-			
-			} else {
-                        	$tem=floor(($time-$last_time)/600);
+                        if ($current_height>=80500) {
+                            $total_time=$time-$last_time;
+                            $total_time-=360;
+                            $tem=floor($total_time/120)+1;
+                        } else {
+                            $tem=floor(($time-$last_time)/600);
                         }
                         $winner=$db->single(
                             "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT $tem,1",
@@ -734,6 +761,7 @@ if($height>=80458){
         global $db;
         // data must be array
         if ($data === false) {
+            _log("Block data is false", 3);
             return false;
         }
         $acc = new Account();
@@ -746,6 +774,7 @@ if($height>=80458){
         // check if the number of transactions is not bigger than current block size
         $max = $this->max_transactions();
         if (count($data) > $max) {
+            _log("Too many transactions in block", 3);
             return false;
         }
 
@@ -760,6 +789,7 @@ if($height>=80458){
             if (!$bootstrapping) {
                 //validate the transaction
                 if (!$trx->check($x, $height)) {
+                    _log("Transaction check failed - $x[id]", 3);
                     return false;
                 }
                 if ($x['version']>=100&&$x['version']<110) {
@@ -772,6 +802,7 @@ if($height>=80458){
 
                 // check if the transaction is already on the blockchain
                 if ($db->single("SELECT COUNT(1) FROM transactions WHERE id=:id", [":id" => $x['id']]) > 0) {
+                    _log("Transaction already on the blockchain - $x[id]", 3);
                     return false;
                 }
             }
@@ -790,6 +821,7 @@ if($height>=80458){
                 [":id" => $id, ":balance" => $bal]
             );
                 if ($res == 0) {
+                    _log("Not enough balance for transaction - $id", 3);
                     return false; // not enough balance for the transactions
                 }
             }
@@ -867,12 +899,14 @@ if($height>=80458){
         foreach ($r as $x) {
             $res = $trx->reverse($x['id']);
             if ($res === false) {
+                _log("A transaction could not be reversed. Delete block failed.");
                 $db->rollback();
                 $db->exec("UNLOCK TABLES");
                 return false;
             }
             $res = $db->run("DELETE FROM blocks WHERE id=:id", [":id" => $x['id']]);
             if ($res != 1) {
+                _log("Delete block failed.");
                 $db->rollback();
                 $db->exec("UNLOCK TABLES");
                 return false;

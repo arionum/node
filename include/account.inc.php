@@ -103,7 +103,7 @@ class Account
         if (strlen($id)<4||strlen($id)>25) {
             return false;
         }
-        if($orig!=$id){
+        if ($orig!=$id) {
             return false;
         }
         
@@ -115,12 +115,16 @@ class Account
     }
 
     //check if an account already has an alias
-    public function has_alias($public_key){
+    public function has_alias($public_key)
+    {
         global $db;
         $public_key=san($public_key);
-        $res=$db->single("SELECT COUNT(1) FROM accounts WHERE public_key=:public_key AND alias IS NOT NULL",[":public_key"=>$public_key]);
-        if($res!=0) return true;
-        else return false;
+        $res=$db->single("SELECT COUNT(1) FROM accounts WHERE public_key=:public_key AND alias IS NOT NULL", [":public_key"=>$public_key]);
+        if ($res!=0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     //check alias validity
@@ -137,25 +141,27 @@ class Account
         if (strlen($id)<4||strlen($id)>25) {
             return false;
         }
-        if($orig!=$id){
+        if ($orig!=$id) {
             return false;
         }
         return $db->single("SELECT COUNT(1) FROM accounts WHERE alias=:alias", [":alias"=>$id]);
     }
 
     //returns the account of an alias
-    public function alias2account($alias){
+    public function alias2account($alias)
+    {
         global $db;
         $alias=strtoupper($alias);
-        $res=$db->single("SELECT id FROM accounts WHERE alias=:alias LIMIT 1",[":alias"=>$alias]);
+        $res=$db->single("SELECT id FROM accounts WHERE alias=:alias LIMIT 1", [":alias"=>$alias]);
         return $res;
     }
 
     //returns the alias of an account
-    public function account2alias($id){
+    public function account2alias($id)
+    {
         global $db;
         $id=san($id);
-        $res=$db->single("SELECT alias FROM accounts WHERE id=:id LIMIT 1",[":id"=>$id]);
+        $res=$db->single("SELECT alias FROM accounts WHERE id=:id LIMIT 1", [":id"=>$id]);
         return $res;
     }
     // check the validity of an address. At the moment, it checks only the characters to be base58 and the length to be >=70 and <=128.
@@ -212,7 +218,7 @@ class Account
         $block = new Block();
         $current = $block->current();
         $public_key = $this->public_key($id);
-	$alias = $this->account2alias($id);
+        $alias = $this->account2alias($id);
         $limit = intval($limit);
         if ($limit > 100 || $limit < 1) {
             $limit = 100;
@@ -300,11 +306,13 @@ class Account
         return $res;
     }
 
-    public function get_masternode($public_key){
+    public function get_masternode($public_key)
+    {
         global $db;
         $res = $db->row("SELECT * FROM masternode WHERE public_key=:public_key", [":public_key" => $public_key]);
-        if(empty($res['public_key'])) return false;
+        if (empty($res['public_key'])) {
+            return false;
+        }
         return $res;
     }
-
 }
