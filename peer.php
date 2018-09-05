@@ -150,6 +150,7 @@ if ($q == "peer") {
     // rebroadcast the transaction to some peers unless the transaction is smaller than the average size of transactions in mempool - protect against garbage data flooding
     $res = $db->row("SELECT COUNT(1) as c, sum(val) as v FROM  mempool ", [":src" => $data['src']]);
     if ($res['c'] < $_config['max_mempool_rebroadcast'] && $res['v'] / $res['c'] < $data['val']) {
+        $data['id']=escapeshellarg(san($data['id']));
         system("php propagate.php transaction '$data[id]'  > /dev/null 2>&1  &");
     }
     api_echo("transaction-ok");
@@ -185,6 +186,7 @@ if ($q == "peer") {
         if ($accept_new) {
             // if the new block is accepted, run a microsanity to sync it
             _log('['.$ip."] Starting microsanity - $data[height]");
+            $ip=escapeshellarg($ip);
             system("php sanity.php microsanity '$ip'  > /dev/null 2>&1  &");
             api_echo("microsanity");
         } else {
@@ -200,7 +202,7 @@ if ($q == "peer") {
             if (!$pr) {
                 api_err("block-too-old");
             }
-            $peer_host = base58_encode($pr['hostname']);
+            $peer_host = escapeshellcmd(base58_encode($pr['hostname']));
             $pr['ip'] = escapeshellcmd(san_ip($pr['ip']));
             system("php propagate.php block current '$peer_host' '$pr[ip]'   > /dev/null 2>&1  &");
             _log('['.$ip."] block too old, sending our current block - $data[height]");
@@ -243,6 +245,7 @@ if ($q == "peer") {
     _log('['.$ip."] block ok, repropagating - $data[height]");
 
     // send it to all our peers
+    $data['id']=escapeshellcmd(san($data['id']));
     system("php propagate.php block '$data[id]' all all linear > /dev/null 2>&1  &");
     api_echo("block-ok");
 } // return the current block, used in syncing

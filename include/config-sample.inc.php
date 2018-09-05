@@ -38,6 +38,10 @@ $_config['allowed_hosts'] = [
     '127.0.0.1',
 ];
 
+// Disable transactions and block repropagation
+$_config['disable_repropagation'] = false;
+
+
 /*
 |--------------------------------------------------------------------------
 | Peer Configuration
@@ -64,6 +68,9 @@ $_config['max_mempool_rebroadcast'] = 5000;
 
 // The number of blocks between rebroadcasting transactions
 $_config['sanity_rebroadcast_height'] = 30;
+
+// Block accepting transfers from addresses blacklisted by the Arionum devs 
+$_config['use_official_blacklist'] = true;
 
 /*
 |--------------------------------------------------------------------------

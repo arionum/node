@@ -193,7 +193,7 @@ elseif ($cmd == "blocks") {
     if ($limit < 1) {
         $limit = 100;
     }
-    $r = $db->run("SELECT * FROM blocks WHERE height>:height ORDER by height ASC LIMIT $limit", [":height" => $height]);
+    $r = $db->run("SELECT * FROM blocks WHERE height>:height ORDER by height ASC LIMIT :limit", [":height" => $height, ":limit"=>$limit]);
     foreach ($r as $x) {
         echo "$x[height]\t$x[id]\n";
     }
@@ -458,7 +458,10 @@ elseif ($cmd == 'get-address') {
     echo "All the peers have been removed from the blacklist\n";
 } elseif ($cmd == 'resync-accounts') {
     // resyncs the balance on all accounts
-
+    if (file_exists("tmp/sanity-lock")) {
+        die("Sanity running. Wait for it to finish");
+    }
+    touch("tmp/sanity-lock");
     // lock table to avoid race conditions on blocks
     $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE");
 
@@ -483,6 +486,7 @@ elseif ($cmd == 'get-address') {
     }
     $db->exec("UNLOCK TABLES");
     echo "All done";
+    unlink("tmp/sanity-lock");
 } elseif ($cmd=="compare-blocks") {
     $block=new Block();
 
@@ -526,15 +530,67 @@ elseif ($cmd == 'get-address') {
     $current=$block->current();
     echo "Height:\t\t$current[height]\n";
     echo "Hash:\t\t".md5(json_encode($res))."\n\n";
-
 } elseif ($cmd=='accounts-hash') {
-    $res=$db->run("SELECT * FROM accounts ORDER by public_key ASC");
+    $res=$db->run("SELECT * FROM accounts ORDER by id ASC");
     $block=new Block();
     $current=$block->current();
     echo "Height:\t\t$current[height]\n";
     echo "Hash:\t\t".md5(json_encode($res))."\n\n";
 } elseif ($cmd == "version") {
     echo "\n\n".VERSION."\n\n";
+} elseif ($cmd == "sendblock"){
+    $peer=trim($argv[3]);
+    if (!filter_var($peer, FILTER_VALIDATE_URL)) {
+        die("Invalid peer hostname");
+    }
+    $peer = filter_var($peer, FILTER_SANITIZE_URL);
+    $height=intval($argv[2]);
+    $block=new Block();
+    $data = $block->export("", $height);
+
+    
+    if($data===false){
+        die("Could not find this block");
+    }
+    $response = peer_post($peer."/peer.php?q=submitBlock", $data, 60, true);
+    var_dump($response);
+
+}elseif ($cmd == "recheck-external-blocks") {
+    $peer=trim($argv[2]);
+    if (!filter_var($peer, FILTER_VALIDATE_URL)) {
+        die("Invalid peer hostname");
+    }
+    $peer = filter_var($peer, FILTER_SANITIZE_URL);
+
+
+    $blocks = [];
+    $block = new Block();
+    $height=intval($argv[3]);
+
+    $last=peer_post($peer."/peer.php?q=currentBlock");
+
+    $b=peer_post($peer."/peer.php?q=getBlock",["height"=>$height]);
+
+    for ($i = $height+1; $i <= $last['height']; $i++) {
+        $c=peer_post($peer."/peer.php?q=getBlock",["height"=>$i]);
+
+        if (!$block->mine(
+            $c['public_key'],
+            $c['nonce'],
+            $c['argon'],
+            $c['difficulty'],
+            $b['id'],
+            $b['height'],
+            $c['date']
+        )) {
+            print("Invalid block detected. $c[height] - $c[id]\n");
+            break;
+        } 
+        echo "Block $i -> ok\n";
+        $b=$c;
+    }
+
+
 } else {
     echo "Invalid command\n";
 }

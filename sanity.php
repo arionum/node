@@ -670,14 +670,14 @@ $db->run("DELETE FROM `mempool` WHERE `date` < UNIX_TIMESTAMP()-(3600*24*14)");
 
 
 //rebroadcasting local transactions
-if ($_config['sanity_rebroadcast_locals'] == true) {
+if ($_config['sanity_rebroadcast_locals'] == true && $_config['disable_repropagation'] == false) {
     $r = $db->run(
         "SELECT id FROM mempool WHERE height>=:current and peer='local' order by `height` asc LIMIT 20",
         [":current" => $current['height']]
     );
     _log("Rebroadcasting local transactions - ".count($r));
     foreach ($r as $x) {
-        $x['id'] = san($x['id']);
+        $x['id'] = escapeshellarg(san($x['id'])); // i know it's redundant due to san(), but some people are too scared of any exec
         system("php propagate.php transaction $x[id]  > /dev/null 2>&1  &");
         $db->run(
             "UPDATE mempool SET height=:current WHERE id=:id",
@@ -687,20 +687,21 @@ if ($_config['sanity_rebroadcast_locals'] == true) {
 }
 
 //rebroadcasting transactions
-$forgotten = $current['height'] - $_config['sanity_rebroadcast_height'];
-$r = $db->run(
+if ($_config['disable_repropagation'] == false) {
+    $forgotten = $current['height'] - $_config['sanity_rebroadcast_height'];
+    $r = $db->run(
     "SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",
     [":forgotten" => $forgotten]
 );
 
-_log("Rebroadcasting external transactions - ".count($r));
+    _log("Rebroadcasting external transactions - ".count($r));
 
-foreach ($r as $x) {
-    $x['id'] = san($x['id']);
-    system("php propagate.php transaction $x[id]  > /dev/null 2>&1  &");
-    $db->run("UPDATE mempool SET height=:current WHERE id=:id", [":id" => $x['id'], ":current" => $current['height']]);
+    foreach ($r as $x) {
+        $x['id'] = escapeshellarg(san($x['id'])); // i know it's redundant due to san(), but some people are too scared of any exec
+        system("php propagate.php transaction $x[id]  > /dev/null 2>&1  &");
+        $db->run("UPDATE mempool SET height=:current WHERE id=:id", [":id" => $x['id'], ":current" => $current['height']]);
+    }
 }
-
 
 //add new peers if there aren't enough active
 if ($total_peers < $_config['max_peers'] * 0.7) {
@@ -709,7 +710,7 @@ if ($total_peers < $_config['max_peers'] * 0.7) {
 }
 
 //random peer check
-$r = $db->run("SELECT * FROM peers WHERE blacklisted<UNIX_TIMESTAMP() and reserve=1 LIMIT ".$_config['max_test_peers']);
+$r = $db->run("SELECT * FROM peers WHERE blacklisted<UNIX_TIMESTAMP() and reserve=1 LIMIT :limit", [":limit"=>intval($_config['max_test_peers'])]);
 foreach ($r as $x) {
     $url = $x['hostname']."/peer.php?q=";
     $data = peer_post($url."ping", [], 5);

@@ -118,6 +118,7 @@ if ($q == "info") {
         if ($res) {
             //if the new block is generated, propagate it to all peers in background
             $current = $block->current();
+            $current['id']=escapeshellarg(san($current['id']));
             system("php propagate.php block $current[id]  > /dev/null 2>&1  &");
             api_echo("accepted");
         }
@@ -193,6 +194,7 @@ if ($q == "info") {
         if ($res) {
             //if the new block is generated, propagate it to all peers in background
             $current = $block->current();
+            $current['id']=escapeshellarg(san($current['id']));
             system("php propagate.php block $current[id]  > /dev/null 2>&1  &");
             api_echo("accepted");
         } else {

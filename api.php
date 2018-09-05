@@ -422,11 +422,19 @@ if ($q == "getAddress") {
         }
     }
     
-
+    
 
     $public_key = san($data['public_key']);
     if (!$acc->valid_key($public_key)) {
         api_err("Invalid public key");
+    }
+    if ($_config['use_official_blacklist']!==false) {
+        $blacklisted=["PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCvVQcHHCNLfiP9LmzWhhpCHx39Bhc67P5HMQM9cctEFvcsUdgrkGqy18taz9ZMrAGtq7NhBYpQ4ZTHkKYiZDaSUqQ", //faucet abuser
+        "PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxYDeQHk7Ke66UB2Un3UMmMoJ7RF5vDZXihdEXi8gk8ZBRAi35aFrER2ZLX1mgND7sLFXKETGTjRYjoHcuRNiJN1g" // octaex
+        ];
+        if (in_array($public_key, $blacklisted)) {
+            api_err("Blacklisted account");
+        }
     }
     $private_key = san($data['private_key']);
     if (!$acc->valid_key($private_key)) {
@@ -559,6 +567,7 @@ if ($q == "getAddress") {
 
 
     $trx->add_mempool($transaction, "local");
+    $hash=escapeshellarg(san($hash));
     system("php propagate.php transaction $hash > /dev/null 2>&1  &");
     api_echo($hash);
 } elseif ($q == "mempoolSize") {

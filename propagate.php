@@ -69,9 +69,13 @@ if ((empty($peer) || $peer == 'all') && $type == "block") {
     foreach ($r as $x) {
         if($x['hostname']==$_config['hostname']) continue;
         // encode the hostname in base58 and sanitize the IP to avoid any second order shell injections
-        $host = base58_encode($x['hostname']);
-        $ip = filter_var($x['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+        $host = escapeshellcmd(base58_encode($x['hostname']));
+        $ip = escapeshellcmd(filter_var($x['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE));
         // fork a new process to send the blocks async
+        $type=escapeshellcmd(san($type));
+        $id=escapeshellcmd(san($id));
+       
+
         if ($debug) {
             system("php propagate.php '$type' '$id' '$host' '$ip' debug");
         } elseif ($linear) {
@@ -166,7 +170,8 @@ if ($type == "transaction") {
     if ($data['peer'] == "local") {
         $r = $db->run("SELECT hostname FROM peers WHERE blacklisted < UNIX_TIMESTAMP()");
     } else {
-        $r = $db->run("SELECT hostname FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0  ORDER by RAND() LIMIT ".intval($_config['transaction_propagation_peers']));
+
+        $r = $db->run("SELECT hostname FROM peers WHERE blacklisted < UNIX_TIMESTAMP() AND reserve=0  ORDER by RAND() LIMIT :limit",["limit"=>intval($_config['transaction_propagation_peers'])]);
     }
     foreach ($r as $x) {
         $res = peer_post($x['hostname']."/peer.php?q=submitTransaction", $data);

@@ -276,7 +276,7 @@ class Block
         // before mnn hf
         if ($height<80000) {
             // elapsed time between the last 20 blocks
-            $first = $db->row("SELECT `date` FROM blocks  ORDER by height DESC LIMIT $limit,1");
+            $first = $db->row("SELECT `date` FROM blocks  ORDER by height DESC LIMIT :limit,1",[":limit"=>$limit]);
             $time = $current['date'] - $first['date'];
 
             // avg block time
@@ -566,8 +566,8 @@ class Block
         }
         _log("We have masternodes to blacklist - $tem", 2);
         $ban=$db->run(
-            "SELECT public_key, blacklist, fails, last_won FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 0,$tem",
-            [":current"=>$last['height'], ":start"=>$last['height']-360]
+            "SELECT public_key, blacklist, fails, last_won FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 0,:limit",
+            [":current"=>$last['height'], ":start"=>$last['height']-360, ":limit"=>$tem]
         );
         _log(json_encode($ban));
         $i=0;
@@ -689,8 +689,8 @@ class Block
                             $tem=floor(($time-$last_time)/600);
                         }
                         $winner=$db->single(
-                            "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT $tem,1",
-                            [":current"=>$current_height, ":start"=>$current_height-360]
+                            "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT :tem,1",
+                            [":current"=>$current_height, ":start"=>$current_height-360, ":tem"=>$tem]
                         );
                         _log("Moving to the next masternode - $tem - $winner", 1);
                         // if all masternodes are dead, give the block to gpu
