@@ -229,7 +229,7 @@ class Transaction
                 "PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCvVQcHHCNLfiP9LmzWhhpCHx39Bhc67P5HMQM9cctEFvcsUdgrkGqy18taz9ZMrAGtq7NhBYpQ4ZTHkKYiZDaSUqQ", //faucet abuser
                 "PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxYDeQHk7Ke66UB2Un3UMmMoJ7RF5vDZXihdEXi8gk8ZBRAi35aFrER2ZLX1mgND7sLFXKETGTjRYjoHcuRNiJN1g" // octaex
             ];
-            if (in_array($public_key, $blacklisted)) {
+            if (in_array($x['public_key'], $blacklisted)) {
                 return true;
             }
         }
