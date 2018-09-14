@@ -227,7 +227,7 @@ class Transaction
         }
         
         if ($_config['use_official_blacklist']!==false) {
-            if (Blacklist::checkPublicKey($x['public_key'])) {
+            if (Blacklist::checkPublicKey($x['public_key']) || Blacklist::checkAddress($x['src'])) {
                 return true;
             }
         }
