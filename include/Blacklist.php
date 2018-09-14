@@ -22,6 +22,7 @@ final class Blacklist
      */
     public const ADDRESSES = [
         // phpcs:disable Generic.Files.LineLength
+        'xuzyMbEGA1tmx1o7mcxSXf2nXuuV1GtKbA4sAqjcNq2gh3shuhwBT5nJHez9AynCaxpJwL6dpkavmZBA3JkrMkg' => 'Octaex Exchange',
         // phpcs:enable
     ];
 
