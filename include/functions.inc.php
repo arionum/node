@@ -24,6 +24,10 @@ function san_host($a)
 function api_err($data)
 {
     global $_config;
+
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+    }
     echo json_encode(["status" => "error", "data" => $data, "coin" => $_config['coin']]);
     exit;
 }
@@ -32,6 +36,10 @@ function api_err($data)
 function api_echo($data)
 {
     global $_config;
+
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+    }
     echo json_encode(["status" => "ok", "data" => $data, "coin" => $_config['coin']]);
     exit;
 }
