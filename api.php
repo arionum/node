@@ -651,7 +651,7 @@ if ($q == "getAddress") {
     api_echo(["masternodes"=>$res, "hash"=>md5(json_encode($res))]);
 } elseif ($q == "getAlias") {
     /**
-     * @api {get} /api.php?q=getAlias  189. getAlias
+     * @api {get} /api.php?q=getAlias  19. getAlias
      * @apiName getAlias
      * @apiGroup API
      * @apiDescription Returns the alias of an account
