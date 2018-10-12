@@ -695,15 +695,23 @@ if ($q == "getAddress") {
     $lastSanity = (int)$db->single("SELECT val FROM config WHERE cfg='sanity_last'");
     $sanitySync = (bool)$db->single("SELECT val FROM config WHERE cfg='sanity_sync'");
     api_echo(['sanity_running' => $sanity, 'last_sanity' => $lastSanity, 'sanity_sync' => $sanitySync]);
-} elseif ($q=="node-info"){
-    $dbversion=$db->single("SELECT val FROM config WHERE cfg='dbversion'");
-    $hostname=$db->single("SELECT val FROM config WHERE cfg='hostname'");
-    $acc=$db->single("SELECT COUNT(1) FROM accounts");
-    $tr=$db->single("SELECT COUNT(1) FROM transactions");
-    $mns=$db->single("SELECT COUNT(1) FROM masternode");
-    $mempool=$db->single("SELECT COUNT(1) FROM mempool");
-    api_echo(["hostname"=>$hostname, "version"=>VERSION,"dbversion"=>$dbversion, "accounts"=>$acc, "transactions"=>$tr, "mempool"=>$mempool, "masternodes"=>$mns]);
+} elseif ($q === 'node-info') {
+    $dbVersion = $db->single("SELECT val FROM config WHERE cfg='dbversion'");
+    $hostname = $db->single("SELECT val FROM config WHERE cfg='hostname'");
+    $acc = $db->single("SELECT COUNT(1) FROM accounts");
+    $tr = $db->single("SELECT COUNT(1) FROM transactions");
+    $masternodes = $db->single("SELECT COUNT(1) FROM masternode");
+    $mempool = $db->single("SELECT COUNT(1) FROM mempool");
 
+    api_echo([
+        'hostname'     => $hostname,
+        'version'      => VERSION,
+        'dbversion'    => $dbVersion,
+        'accounts'     => $acc,
+        'transactions' => $tr,
+        'mempool'      => $mempool,
+        'masternodes'  => $masternodes,
+    ]);
 } else {
     api_err("Invalid request");
 }
