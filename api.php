@@ -696,6 +696,21 @@ if ($q == "getAddress") {
     $sanitySync = (bool)$db->single("SELECT val FROM config WHERE cfg='sanity_sync'");
     api_echo(['sanity_running' => $sanity, 'last_sanity' => $lastSanity, 'sanity_sync' => $sanitySync]);
 } elseif ($q === 'node-info') {
+    /**
+     * @api            {get} /api.php?q=node-info  21. node-info
+     * @apiName        node-info
+     * @apiGroup       API
+     * @apiDescription Returns details about the node.
+     *
+     * @apiSuccess {object}  data A collection of data about the node.
+     * @apiSuccess {string} data.hostname The hostname of the node.
+     * @apiSuccess {string} data.version The current version of the node.
+     * @apiSuccess {string} data.dbversion The database schema version for the node.
+     * @apiSuccess {number} data.accounts The number of accounts known by the node.
+     * @apiSuccess {number} data.transactions The number of transactions known by the node.
+     * @apiSuccess {number} data.mempool The number of transactions in the mempool.
+     * @apiSuccess {number} data.masternodes The number of masternodes known by the node.
+     */
     $dbVersion = $db->single("SELECT val FROM config WHERE cfg='dbversion'");
     $hostname = $db->single("SELECT val FROM config WHERE cfg='hostname'");
     $acc = $db->single("SELECT COUNT(1) FROM accounts");
