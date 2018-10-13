@@ -425,8 +425,8 @@ if ($q == "getAddress") {
             api_err("Invalid destination alias");
         }
     }
-    
-    
+
+
 
     $public_key = san($data['public_key']);
     if (!$acc->valid_key($public_key)) {
@@ -456,7 +456,7 @@ if ($q == "getAddress") {
     if ($date > time() + 86400) {
         api_err("Invalid Date");
     }
-   
+
     $message=$data['message'];
     if (strlen($message) > 128) {
         api_err("The message must be less than 128 chars");
@@ -474,7 +474,7 @@ if ($q == "getAddress") {
     if ($val < 0.00000001) {
         api_err("Invalid value");
     }
-    
+
     // set alias
     if ($version==3) {
         $fee=10;
@@ -634,7 +634,7 @@ if ($q == "getAddress") {
     $public_key=san($data['public_key']);
     $signature=san($data['signature']);
     $data=$data['data'];
-    
+
     api_echo(ec_verify($data, $signature, $public_key));
 } elseif ($q == "masternodes") {
     /**
@@ -653,7 +653,7 @@ if ($q == "getAddress") {
     api_echo(["masternodes"=>$res, "hash"=>md5(json_encode($res))]);
 } elseif ($q == "getAlias") {
     /**
-     * @api {get} /api.php?q=getAlias  189. getAlias
+     * @api {get} /api.php?q=getAlias  19. getAlias
      * @apiName getAlias
      * @apiGroup API
      * @apiDescription Returns the alias of an account
@@ -664,7 +664,7 @@ if ($q == "getAddress") {
      *
      * @apiSuccess {string} data alias
      */
-    
+
     $public_key = $data['public_key'];
     $account = $data['account'];
     if (!empty($public_key) && strlen($public_key) < 32) {
@@ -673,30 +673,62 @@ if ($q == "getAddress") {
     if (!empty($public_key)) {
         $account = $acc->get_address($public_key);
     }
-  
+
     if (empty($account)) {
         api_err("Invalid account id");
     }
     $account = san($account);
-    
+
     api_echo($acc->account2alias($account));
-} elseif ($q=="sanity"){
-    $sanity=false;
-    if(file_exists("tmp/sanity-lock")) {
-        $sanity=true;
-    }    
-    $last_sanity=$db->single("SELECT val FROM config WHERE cfg='sanity_last'");
-    $sanity_sync=$db->single("SELECT val FROM config WHERE cfg='sanity_sync'");
-    api_echo(["sanity_running"=>$sanity,"last_sanity"=>$last_sanity, "sanity_sync"=>$sanity_sync]);
-} elseif ($q=="node-info"){
-    $dbversion=$db->single("SELECT val FROM config WHERE cfg='dbversion'");
-    $hostname=$db->single("SELECT val FROM config WHERE cfg='hostname'");
-    $acc=$db->single("SELECT COUNT(1) FROM accounts");
-    $tr=$db->single("SELECT COUNT(1) FROM transactions");
-    $mns=$db->single("SELECT COUNT(1) FROM masternode");
-    $mempool=$db->single("SELECT COUNT(1) FROM mempool");
-    api_echo(["hostname"=>$hostname, "version"=>VERSION,"dbversion"=>$dbversion, "accounts"=>$acc, "transactions"=>$tr, "mempool"=>$mempool, "masternodes"=>$mns]);
-    
+} elseif ($q === 'sanity') {
+    /**
+     * @api            {get} /api.php?q=sanity  20. sanity
+     * @apiName        sanity
+     * @apiGroup       API
+     * @apiDescription Returns details about the node's sanity process.
+     *
+     * @apiSuccess {object}  data A collection of data about the sanity process.
+     * @apiSuccess {boolean} data.sanity_running Whether the sanity process is currently running.
+     * @apiSuccess {number}  data.last_sanity The timestamp for the last time the sanity process was run.
+     * @apiSuccess {boolean} data.sanity_sync Whether the sanity process is currently synchronising.
+     */
+    $sanity = file_exists(__DIR__.'/tmp/sanity-lock');
+
+    $lastSanity = (int)$db->single("SELECT val FROM config WHERE cfg='sanity_last'");
+    $sanitySync = (bool)$db->single("SELECT val FROM config WHERE cfg='sanity_sync'");
+    api_echo(['sanity_running' => $sanity, 'last_sanity' => $lastSanity, 'sanity_sync' => $sanitySync]);
+} elseif ($q === 'node-info') {
+    /**
+     * @api            {get} /api.php?q=node-info  21. node-info
+     * @apiName        node-info
+     * @apiGroup       API
+     * @apiDescription Returns details about the node.
+     *
+     * @apiSuccess {object}  data A collection of data about the node.
+     * @apiSuccess {string} data.hostname The hostname of the node.
+     * @apiSuccess {string} data.version The current version of the node.
+     * @apiSuccess {string} data.dbversion The database schema version for the node.
+     * @apiSuccess {number} data.accounts The number of accounts known by the node.
+     * @apiSuccess {number} data.transactions The number of transactions known by the node.
+     * @apiSuccess {number} data.mempool The number of transactions in the mempool.
+     * @apiSuccess {number} data.masternodes The number of masternodes known by the node.
+     */
+    $dbVersion = $db->single("SELECT val FROM config WHERE cfg='dbversion'");
+    $hostname = $db->single("SELECT val FROM config WHERE cfg='hostname'");
+    $acc = $db->single("SELECT COUNT(1) FROM accounts");
+    $tr = $db->single("SELECT COUNT(1) FROM transactions");
+    $masternodes = $db->single("SELECT COUNT(1) FROM masternode");
+    $mempool = $db->single("SELECT COUNT(1) FROM mempool");
+
+    api_echo([
+        'hostname'     => $hostname,
+        'version'      => VERSION,
+        'dbversion'    => $dbVersion,
+        'accounts'     => $acc,
+        'transactions' => $tr,
+        'mempool'      => $mempool,
+        'masternodes'  => $masternodes,
+    ]);
 } else {
     api_err("Invalid request");
 }
