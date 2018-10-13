@@ -24,6 +24,8 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 OR OTHER DEALINGS IN THE SOFTWARE.
 */
 require_once("include/init.inc.php");
+header('Content-Type: application/json');
+
 $trx = new Transaction();
 $block = new Block();
 $q = $_GET['q'];
