@@ -54,6 +54,9 @@ $_config['transaction_propagation_peers'] = 5;
 // How many new peers to check from each peer
 $_config['max_test_peers'] = 5;
 
+// The initial peers to sync from in sanity
+$_config['initial_peer_list'] = [];
+
 /*
 |--------------------------------------------------------------------------
 | Mempool Configuration
