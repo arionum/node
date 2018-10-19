@@ -60,8 +60,8 @@ if ($arg != "microsanity") {
     sleep(3);
 }
 
-
 require_once("include/init.inc.php");
+require_once __DIR__.'/include/InitialPeers.php';
 
 if ($argv[1]=="dev") {
     error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
@@ -267,16 +267,20 @@ $peered = [];
 // if we have no peers, get the seed list from the official site
 if ($total_peers == 0 && $_config['testnet'] == false) {
     $i = 0;
-    echo "No peers found. Attempting to get peers from arionum.com\n";
-    $f = file("https://www.arionum.com/peers.txt");
-    shuffle($f);
-    // we can't connect to arionum.com
-    if (count($f) < 2) {
-        @unlink("tmp/sanity-lock");
-        die("Could not connect to arionum.com! Will try later!\n");
+    echo 'No peers found. Attempting to get peers from the initial list.'.PHP_EOL;
+
+    $initialPeers = new \Arionum\InitialPeers($_config['initial_peer_list'] ?? []);
+
+    try {
+        $peers = $initialPeers->getAll();
+    } catch (\Arionum\Exception $e) {
+        @unlink('tmp/sanity-lock');
+        die($e->getMessage().PHP_EOL);
     }
-    foreach ($f as $peer) {
-        //peer with all until max_peers, this will ask them to send a peering request to our peer.php where we add their peer to the db.
+
+    foreach ($peers as $peer) {
+        // Peer with all until max_peers
+        // This will ask them to send a peering request to our peer.php where we add their peer to the db.
         $peer = trim(san_host($peer));
         $bad_peers = ["127.", "localhost", "10.", "192.168.","172.16.","172.17.","172.18.","172.19.","172.20.","172.21.","172.22.","172.23.","172.24.","172.25.","172.26.","172.27.","172.28.","172.29.","172.30.","172.31."];
 
