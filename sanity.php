@@ -60,8 +60,7 @@ if ($arg != "microsanity") {
     sleep(3);
 }
 
-require_once("include/init.inc.php");
-require_once __DIR__.'/include/InitialPeers.php';
+require_once __DIR__.'/include/init.inc.php';
 
 if ($argv[1]=="dev") {
     error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
