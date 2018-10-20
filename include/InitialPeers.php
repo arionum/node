@@ -1,6 +1,6 @@
 <?php
 
-namespace Arionum;
+namespace Arionum\Node;
 
 /**
  * Class InitialPeers

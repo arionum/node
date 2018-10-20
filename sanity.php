@@ -268,11 +268,11 @@ if ($total_peers == 0 && $_config['testnet'] == false) {
     $i = 0;
     echo 'No peers found. Attempting to get peers from the initial list.'.PHP_EOL;
 
-    $initialPeers = new \Arionum\InitialPeers($_config['initial_peer_list'] ?? []);
+    $initialPeers = new \Arionum\Node\InitialPeers($_config['initial_peer_list'] ?? []);
 
     try {
         $peers = $initialPeers->getAll();
-    } catch (\Arionum\Exception $e) {
+    } catch (\Arionum\Node\Exception $e) {
         @unlink('tmp/sanity-lock');
         die($e->getMessage().PHP_EOL);
     }
