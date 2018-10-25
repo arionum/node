@@ -301,7 +301,15 @@ if ($total_peers == 0 && $_config['testnet'] == false) {
             continue;
         }
         $peered[$pid] = 1;
-        $res = peer_post($peer."/peer.php?q=peer", ["hostname" => $_config['hostname'], "repeer" => 1]);
+        
+        if($_config['passive_peering'] == true){
+            // does not peer, just add it to DB in passive mode
+            $db->run("INSERT into peers set hostname=:hostname, ping=0, reserve=0,ip=:ip",[":hostname"=>$peer, ":ip"=>md5($peer)]);
+            $res=true;
+        } else {
+            // forces the other node to peer with us.
+            $res = peer_post($peer."/peer.php?q=peer", ["hostname" => $_config['hostname'], "repeer" => 1]);
+        }
         if ($res !== false) {
             $i++;
             echo "Peering OK - $peer\n";
@@ -328,7 +336,7 @@ foreach ($r as $x) {
     _log("Contacting peer $x[hostname]");
     $url = $x['hostname']."/peer.php?q=";
     // get their peers list
-    if ($_config['get_more_peers']==true) {
+    if ($_config['get_more_peers']==true && $_config['passive_peering']!=true) {
         $data = peer_post($url."getPeers", [], 5);
         if ($data === false) {
             _log("Peer $x[hostname] unresponsive");

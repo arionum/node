@@ -69,7 +69,7 @@ header('Content-Type: application/json');
 
 use Arionum\Blacklist;
 
-require_once("include/init.inc.php");
+require_once __DIR__.'/include/init.inc.php';
 error_reporting(0);
 $ip = san_ip($_SERVER['REMOTE_ADDR']);
 $ip = filter_var($ip, FILTER_VALIDATE_IP);

@@ -29,7 +29,7 @@ if (php_sapi_name() !== 'cli') {
     die("This should only be run as cli");
 }
 
-require_once("include/init.inc.php");
+require_once __DIR__.'/include/init.inc.php';
 $cmd = trim($argv[1]);
 
 /**

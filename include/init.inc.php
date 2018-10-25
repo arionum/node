@@ -1,6 +1,6 @@
 <?php
 // ARO version
-define("VERSION", "0.4.2");
+define("VERSION", "0.4.3");
 // Amsterdam timezone by default, should probably be moved to config
 date_default_timezone_set("UTC");
 
@@ -14,14 +14,14 @@ if (php_sapi_name() !== 'cli' && substr_count($_SERVER['PHP_SELF'], "/") > 1) {
 }
 
 require_once __DIR__.'/Exception.php';
-require_once("include/config.inc.php");
-require_once("include/db.inc.php");
-require_once("include/functions.inc.php");
+require_once __DIR__.'/config.inc.php';
+require_once __DIR__.'/db.inc.php';
+require_once __DIR__.'/functions.inc.php';
 require_once __DIR__.'/Blacklist.php';
 require_once __DIR__.'/InitialPeers.php';
-require_once("include/block.inc.php");
-require_once("include/account.inc.php");
-require_once("include/transaction.inc.php");
+require_once __DIR__.'/block.inc.php';
+require_once __DIR__.'/account.inc.php';
+require_once __DIR__.'/transaction.inc.php';
 
 if ($_config['db_pass'] == "ENTER-DB-PASS") {
     die("Please update your config file and set your db password");
@@ -77,7 +77,7 @@ if (file_exists("tmp/db-update")) {
     $res = unlink("tmp/db-update");
     if ($res) {
         echo "Updating db schema! Please refresh!\n";
-        require_once("include/schema.inc.php");
+        require_once __DIR__.'/schema.inc.php';
         exit;
     }
     echo "Could not access the tmp/db-update file. Please give full permissions to this file\n";

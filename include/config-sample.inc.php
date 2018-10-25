@@ -85,6 +85,10 @@ $_config['initial_peer_list'] = [
     'http://peer27.arionum.com',
 ];
 
+// does not peer with any of the peers. Uses the seed peers and syncs only from those peers. Requires a cronjob on sanity.php
+$_config['passive_peering'] = false;
+
+
 /*
 |--------------------------------------------------------------------------
 | Mempool Configuration

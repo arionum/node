@@ -24,7 +24,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 OR OTHER DEALINGS IN THE SOFTWARE.
 */
 set_time_limit(360);
-require_once("include/init.inc.php");
+require_once __DIR__.'/include/init.inc.php';
 $block = new Block();
 
 $type = san($argv[1]);
