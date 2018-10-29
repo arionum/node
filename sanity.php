@@ -31,6 +31,8 @@ if (php_sapi_name() !== 'cli') {
     die("This should only be run as cli");
 }
 
+require_once __DIR__.'/include/init.inc.php';
+
 // make sure there's only a single sanity process running at the same time
 if (file_exists("tmp/sanity-lock")) {
     $ignore_lock = false;
@@ -40,15 +42,18 @@ if (file_exists("tmp/sanity-lock")) {
             $ignore_lock = true;
         }
     }
-    $pid_time = filemtime("tmp/sanity-lock");
-    // if the process died, restart after 1day
-    if (time() - $pid_time > 86400) {
-        @unlink("tmp/sanity-lock");
+    $pid_time = filemtime(__DIR__."/tmp/sanity-lock");
+
+    // If the process died, restart after 3 times the sanity interval
+    if (time() - $pid_time > ($_config['sanity_interval'] * 3)) {
+        @unlink(__DIR__."/tmp/sanity-lock");
     }
+
     if (!$ignore_lock) {
         die("Sanity lock in place");
     }
 }
+
 // set the new sanity lock
 $lock = fopen("tmp/sanity-lock", "w");
 fclose($lock);
@@ -59,8 +64,6 @@ echo "Sleeping for 3 seconds\n";
 if ($arg != "microsanity") {
     sleep(3);
 }
-
-require_once __DIR__.'/include/init.inc.php';
 
 if ($argv[1]=="dev") {
     error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
