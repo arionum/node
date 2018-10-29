@@ -23,6 +23,9 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 OR OTHER DEALINGS IN THE SOFTWARE.
 */
+
+const SANITY_LOCK_PATH = __DIR__.'/tmp/sanity-lock';
+
 set_time_limit(0);
 error_reporting(0);
 
@@ -34,7 +37,7 @@ if (php_sapi_name() !== 'cli') {
 require_once __DIR__.'/include/init.inc.php';
 
 // make sure there's only a single sanity process running at the same time
-if (file_exists("tmp/sanity-lock")) {
+if (file_exists(SANITY_LOCK_PATH)) {
     $ignore_lock = false;
     if ($argv[1] == "force") {
         $res = intval(shell_exec("ps aux|grep sanity.php|grep -v grep|wc -l"));
@@ -42,11 +45,11 @@ if (file_exists("tmp/sanity-lock")) {
             $ignore_lock = true;
         }
     }
-    $pid_time = filemtime(__DIR__."/tmp/sanity-lock");
+    $pid_time = filemtime(SANITY_LOCK_PATH);
 
     // If the process died, restart after 3 times the sanity interval
     if (time() - $pid_time > ($_config['sanity_interval'] * 3)) {
-        @unlink(__DIR__."/tmp/sanity-lock");
+        @unlink(SANITY_LOCK_PATH);
     }
 
     if (!$ignore_lock) {
@@ -55,7 +58,7 @@ if (file_exists("tmp/sanity-lock")) {
 }
 
 // set the new sanity lock
-$lock = fopen("tmp/sanity-lock", "w");
+$lock = fopen(SANITY_LOCK_PATH, "w");
 fclose($lock);
 $arg = trim($argv[1]);
 $arg2 = trim($argv[2]);
@@ -73,7 +76,7 @@ if ($argv[1]=="dev") {
 // the sanity can't run without the schema being installed
 if ($_config['dbversion'] < 2) {
     die("DB schema not created");
-    @unlink("tmp/sanity-lock");
+    @unlink(SANITY_LOCK_PATH);
     exit;
 }
 
@@ -236,7 +239,7 @@ if ($arg == "microsanity" && !empty($arg2)) {
         _log("Synced block from $host - $b[height] $b[difficulty]");
     } while (0);
 
-    @unlink("tmp/sanity-lock");
+    @unlink(SANITY_LOCK_PATH);
     exit;
 }
 
@@ -276,7 +279,7 @@ if ($total_peers == 0 && $_config['testnet'] == false) {
     try {
         $peers = $initialPeers->getAll();
     } catch (\Arionum\Node\Exception $e) {
-        @unlink('tmp/sanity-lock');
+        @unlink(SANITY_LOCK_PATH);
         die($e->getMessage().PHP_EOL);
     }
 
@@ -328,7 +331,7 @@ if ($total_peers == 0 && $_config['testnet'] == false) {
     $total_peers = count($r);
     if ($total_peers == 0) {
         // something went wrong, could not add any peers -> exit
-        @unlink("tmp/sanity-lock");
+        @unlink(SANITY_LOCK_PATH);
         die("Could not peer to any peers! Please check internet connectivity!\n");
     }
 }
@@ -801,4 +804,4 @@ if ($_config['sanity_recheck_blocks'] > 0 && $_config['testnet'] == false) {
 
 _log("Finishing sanity");
 
-@unlink("tmp/sanity-lock");
+@unlink(SANITY_LOCK_PATH);
