@@ -48,12 +48,12 @@ if (file_exists(SANITY_LOCK_PATH)) {
     $pid_time = filemtime(SANITY_LOCK_PATH);
 
     // If the process died, restart after 3 times the sanity interval
-    if (time() - $pid_time > ($_config['sanity_interval'] * 3)) {
+    if (time() - $pid_time > ($_config['sanity_interval'] ?? 900 * 3)) {
         @unlink(SANITY_LOCK_PATH);
     }
 
     if (!$ignore_lock) {
-        die("Sanity lock in place");
+        die("Sanity lock in place".PHP_EOL);
     }
 }
 
