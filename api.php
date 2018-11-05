@@ -712,6 +712,7 @@ if ($q == "getAddress") {
      * @apiSuccess {number} data.transactions The number of transactions known by the node.
      * @apiSuccess {number} data.mempool The number of transactions in the mempool.
      * @apiSuccess {number} data.masternodes The number of masternodes known by the node.
+     * @apiSuccess {number} data.peers The number of valid peers.
      */
     $dbVersion = $db->single("SELECT val FROM config WHERE cfg='dbversion'");
     $hostname = $db->single("SELECT val FROM config WHERE cfg='hostname'");
@@ -719,7 +720,7 @@ if ($q == "getAddress") {
     $tr = $db->single("SELECT COUNT(1) FROM transactions");
     $masternodes = $db->single("SELECT COUNT(1) FROM masternode");
     $mempool = $db->single("SELECT COUNT(1) FROM mempool");
-
+    $peers = $db->single("SELECT COUNT(1) FROM peers WHERE blacklisted<UNIX_TIMESTAMP()");
     api_echo([
         'hostname'     => $hostname,
         'version'      => VERSION,
@@ -728,7 +729,38 @@ if ($q == "getAddress") {
         'transactions' => $tr,
         'mempool'      => $mempool,
         'masternodes'  => $masternodes,
+        'peers'        => $peers
     ]);
+} elseif ($q === 'checkAddress') {
+    /**
+     * @api            {get} /api.php?q=checkAddress  22. checkAddress
+     * @apiName        node-info
+     * @apiGroup       API
+     * @apiDescription Checks the validity of an address.
+     *
+     * @apiParam {string} account Account id / address
+     * @apiParam {string} [public_key] Public key
+     *
+     * @apiSuccess {boolean} data True if the address is valid, false otherwise.
+     */
+
+    $address=$data['account'];
+    $public_key=$data['public_key'];
+    $acc = new Account();
+    if (!$acc->valid($address)) {
+        api_err(false);
+    }
+
+    $dst_b = base58_decode($address);
+    if (strlen($dst_b) != 64) {
+        api_err(false);
+    }
+    if (!empty($public_key)) {
+        if($acc->get_address($public_key)!=$address){
+            api_err(false);
+        }
+    }
+    api_echo(true);
 } else {
     api_err("Invalid request");
 }

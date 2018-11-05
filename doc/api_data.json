@@ -1017,6 +1017,50 @@
   },
   {
     "type": "get",
+    "url": "/api.php?q=checkAddress",
+    "title": "22. checkAddress",
+    "name": "node_info",
+    "group": "API",
+    "description": "<p>Checks the validity of an address.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": false,
+            "field": "account",
+            "description": "<p>Account id / address</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": true,
+            "field": "public_key",
+            "description": "<p>Public key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "boolean",
+            "optional": false,
+            "field": "data",
+            "description": "<p>True if the address is valid, false otherwise.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "./api.php",
+    "groupTitle": "API"
+  },
+  {
+    "type": "get",
     "url": "/api.php?q=node-info",
     "title": "21. node-info",
     "name": "node_info",
@@ -1080,6 +1124,13 @@
             "optional": false,
             "field": "data.masternodes",
             "description": "<p>The number of masternodes known by the node.</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "number",
+            "optional": false,
+            "field": "data.peers",
+            "description": "<p>The number of valid peers.</p>"
           }
         ]
       }
@@ -1300,34 +1351,6 @@
     "version": "0.0.0",
     "filename": "./api.php",
     "groupTitle": "API"
-  },
-  {
-    "success": {
-      "fields": {
-        "Success 200": [
-          {
-            "group": "Success 200",
-            "optional": false,
-            "field": "varname1",
-            "description": "<p>No type.</p>"
-          },
-          {
-            "group": "Success 200",
-            "type": "String",
-            "optional": false,
-            "field": "varname2",
-            "description": "<p>With type.</p>"
-          }
-        ]
-      }
-    },
-    "type": "",
-    "url": "",
-    "version": "0.0.0",
-    "filename": "./doc/main.js",
-    "group": "C__Users_owen_voke_Documents_GitHub_php_arionum_node_doc_main_js",
-    "groupTitle": "C__Users_owen_voke_Documents_GitHub_php_arionum_node_doc_main_js",
-    "name": ""
   },
   {
     "type": "php util.php",
@@ -1835,5 +1858,33 @@
     "version": "0.0.0",
     "filename": "./util.php",
     "groupTitle": "UTIL"
+  },
+  {
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "optional": false,
+            "field": "varname1",
+            "description": "<p>No type.</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "varname2",
+            "description": "<p>With type.</p>"
+          }
+        ]
+      }
+    },
+    "type": "",
+    "url": "",
+    "version": "0.0.0",
+    "filename": "./doc/main.js",
+    "group": "_github_node_doc_main_js",
+    "groupTitle": "_github_node_doc_main_js",
+    "name": ""
   }
 ]
