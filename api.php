@@ -734,7 +734,7 @@ if ($q == "getAddress") {
 } elseif ($q === 'checkAddress') {
     /**
      * @api            {get} /api.php?q=checkAddress  22. checkAddress
-     * @apiName        node-info
+     * @apiName        checkAddress
      * @apiGroup       API
      * @apiDescription Checks the validity of an address.
      *

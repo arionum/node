@@ -103,6 +103,50 @@ define({ "api": [
   },
   {
     "type": "get",
+    "url": "/api.php?q=checkAddress",
+    "title": "22. checkAddress",
+    "name": "checkAddress",
+    "group": "API",
+    "description": "<p>Checks the validity of an address.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": false,
+            "field": "account",
+            "description": "<p>Account id / address</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "string",
+            "optional": true,
+            "field": "public_key",
+            "description": "<p>Public key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "boolean",
+            "optional": false,
+            "field": "data",
+            "description": "<p>True if the address is valid, false otherwise.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "./api.php",
+    "groupTitle": "API"
+  },
+  {
+    "type": "get",
     "url": "/api.php?q=checkSignature",
     "title": "17. checkSignature",
     "name": "checkSignature",
@@ -1007,50 +1051,6 @@ define({ "api": [
             "optional": false,
             "field": "data",
             "description": "<p>Number of mempool transactions</p>"
-          }
-        ]
-      }
-    },
-    "version": "0.0.0",
-    "filename": "./api.php",
-    "groupTitle": "API"
-  },
-  {
-    "type": "get",
-    "url": "/api.php?q=checkAddress",
-    "title": "22. checkAddress",
-    "name": "node_info",
-    "group": "API",
-    "description": "<p>Checks the validity of an address.</p>",
-    "parameter": {
-      "fields": {
-        "Parameter": [
-          {
-            "group": "Parameter",
-            "type": "string",
-            "optional": false,
-            "field": "account",
-            "description": "<p>Account id / address</p>"
-          },
-          {
-            "group": "Parameter",
-            "type": "string",
-            "optional": true,
-            "field": "public_key",
-            "description": "<p>Public key</p>"
-          }
-        ]
-      }
-    },
-    "success": {
-      "fields": {
-        "Success 200": [
-          {
-            "group": "Success 200",
-            "type": "boolean",
-            "optional": false,
-            "field": "data",
-            "description": "<p>True if the address is valid, false otherwise.</p>"
           }
         ]
       }
