@@ -203,6 +203,7 @@ if ($q == "getAddress") {
      */
 
     $account = san($data['account']);
+    $public_key = san($data['public_key'] ?? '');
     if (!empty($public_key) && strlen($public_key) < 32) {
         api_err("Invalid public key");
     }
