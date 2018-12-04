@@ -82,7 +82,6 @@ $_config['initial_peer_list'] = [
     'http://peer24.arionum.com',
     'http://peer25.arionum.com',
     'http://peer26.arionum.com',
-    'http://peer27.arionum.com',
 ];
 
 // does not peer with any of the peers. Uses the seed peers and syncs only from those peers. Requires a cronjob on sanity.php
