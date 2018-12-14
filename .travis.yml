@@ -2,21 +2,21 @@ dist: trusty
 language: php
 
 php:
-  - 7.2
-  - 7.3
-  - nightly
+- 7.2
+- 7.3
+- nightly
 
 matrix:
   allow_failures:
-    - php: nightly
+  - php: nightly
 
 ## Cache composer
 cache:
   directories:
-    - $HOME/.composer/cache
+  - $HOME/.composer/cache
 
 before_script:
-  - travis_retry composer update --no-interaction --prefer-dist
+- travis_retry composer update --no-interaction --prefer-dist
 
 script:
-  - vendor/bin/phpcs -l --standard=psr2 . include
+- vendor/bin/phpcs -l --standard=psr2 . include
