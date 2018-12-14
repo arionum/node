@@ -9,10 +9,6 @@ matrix:
   allow_failures:
     - php: nightly
 
-# This triggers builds to run on the new TravisCI infrastructure.
-# See: https://docs.travis-ci.com/user/reference/trusty#Container-based-with-sudo%3A-false
-sudo: false
-
 ## Cache composer
 cache:
   directories:
