@@ -164,7 +164,10 @@ if ($dbversion == 8) {
   ADD KEY `height` (`height`);");
   $dbversion++;
 }
-
+if ($dbversion = 9) {
+  //dev only
+  $dbversion++;
+}
 
 
 // update the db version to the latest one

@@ -537,6 +537,7 @@ if ($q == "getAddress") {
     $transaction['id'] = $hash;
 
 
+
     if (!$trx->check($transaction)) {
         api_err("Transaction signature failed");
     }

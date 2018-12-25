@@ -61,7 +61,7 @@ class Block
         }
 
 
-
+        
 
         // the reward transaction
         $transaction = [
@@ -157,6 +157,8 @@ class Block
                 $db->exec("UNLOCK TABLES");
                 return false;
             }
+
+            $this->do_hard_forks($height, $hash);
         }
 
         // parse the block's transactions and insert them to db
@@ -176,6 +178,74 @@ class Block
         $db->exec("UNLOCK TABLES");
         return true;
     }
+
+    public function do_hard_forks($height, $block)
+    {
+        global $db;
+        if ($height==126215) {
+            // compromised masternodes are being removed
+            $mns=['PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCvfpHmKb9oYWqYSr3HpzqcyTgjBtGmnbn3hPZwJRUCiADS2wDKmsUpJD6fMxjQ2m6KW4uq7DL2nePA4ECW4GCWdt2',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCvqRb5q1YQCRcZFKpG8u5H7w1cYTTqQyqxjCZgbHciHeCBiYKzdwXyLdypYyw76LnBmfk6nFxfxuUnvGJh98R6xcF',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCvXcwowN1FE6AGwKoavvTahjWcbx1QRwLzApHZhh7yjYRBMW8DzKoWrcwBUKLPNHQYyw3cL7oTY2skQ95mJeC7hT5',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCw4Z6P2kzQjrRBpyBxfSK9Kp19GxgC3HebasGTWrjA3e7ox9jh3YNmEzBggjncPUrQ2VY3qb3SGnFFYiPmRN1sRoG',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwCLLynpDsATrKqsAnz7WFHT7iu1A3YRL4N6UwXwn16z9yrzgsDCbZtcTFCwUazvhdF8LUHXm9ZgEB9EJATSdc79N',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwEd7pELR5aGy9oH8PoTmXk1j6NQbmGLvNzYXjnssLZJhU9QzmKwAy5kgHhwtvy4P9rggmC2LkTVRND6hch4n6xGq',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwEZDdWHqPwWpPVJvQLUceUQ4mPByvEo4LHvBKBrzFfCvWubwHW9cMUdvjjpPCsypUKsVow2fcv8jWWNTUj3gdmgq',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwgbYNTL2xnuv1uzkSa2aST75Cbu3JCBj6a1MwvNVRnTGGe9HWxVP1XJwmRD4e3L5EyyVm2BTFzPR7KdaJXNdpUYi',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwHon6VCsNdodwST22Av8ZZL1LwKjZqR61Qx5fYVhn238tBX9S6sCdg5sHUSqZwoTb2HfzqcQLMjLENZqjXAjLMN5',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwm1pnEzdJ3R17sspgwqoRNshHQBRRWDzm5GxD9F3n9AkjaMpZyS2TmVKMWh4GJPaFb2Z93GyeiNYhryXS2G5uskB',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwmgnsHgjtW6n9SFHv69hWsr2ZXKdQohCRyXLWPwZtLCKa7xyDmboebWbd1pMtcxQbNjM2Q6T46pQPt1WPjx4nghg',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwNGSXuxG9W79qweXyyjYCFTKhwV2Q81wcz8TjFTSsZfJD9Rb4MTZDFmdQk8yqP9KwkJbZ6RXEBEVjtj7mC8o9EVa',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwPopxXhV9YjdjjKp5WxDNu4Zr8686RL7tcn5zoAnwxHTB27GKdm6yQG1cCopWTALMau1eUJmmq1733mRRzXiSFtZ',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwQ57WEgT693qD428G9SPxHo38c2nepBxprMXDYhDzJkEEPPX99jEbfgRFDYAXTek4h6gpfNVDMVuVrfhRb5YZ3Y2',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwqszMv7TdpAN1cyKZLv7HxEAfsRNwQb3SAXTCxF1X3eDKZW8V5a2v3xrfw35TwjuT5AV5gTXF85LXYfpgw2LVxH4',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwSjweQMz6kvEsd9UBPcb3UJ4weV5G1m8HUV3pgXR7Lw8jRSBPEvkrbaBU92xvdtPFSMqMMobikYx2vSEdqKYUA2S',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwUTAWLefjkStKbuK1qWiF7ajvckieBtH6m5Ws6GuSgAQsHSbLaaGUAtvHQqxF6BAeDUht7uVT9rwwBA5sQU3Akdw',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwXzfQVAqqiowx84Ufw5a6RKv9Y9GCfUnhhSNe2hRYkogWVDNLjjLTDcPbwFfy2vK3LQ2YCuXBhqwHTU41MyMWdZd',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCwZniUMagqbk6fVQGv4ALodTtUomBCAkDs5NAQuJXjWu3nG8sJtWL9UyCVvBs63LJzpQjhcC9NsXFW8hijyEYphCb',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCx2NLK1PvU7frmjumhRbmsx3s1XXdA7hDjXAYv2c2UDeVpjXeXUcrKzahsNBJ35MfKULZiHqBV2JWHUmoWLhhSHo1',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCx6eRNDqx9YUY2thrZQ11RN7FpGP8AoXiwdLUorp1JtpRpaCdknL94sxgew4nuWyp7YgroJAYSifDkHtB7BcPsc5a',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxB5d1YDJ1Dj8djpWxWwvkScG6xiq5QP75pLe6ExnArRefJThGzyWwKAx1gYVrQBRWo4tPKP45TKvzJwmYCH2redw',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxbF4AS4QWkPNSASwpLxkXRZ677mntngFTCdnQHZCKHrcC7zroFQHaKodj1uNSY7joUJmbsxU3qkW47sYrA1wN2xo',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxKzzVWuwTC2dcnrhaCRQT3soqXxY7qVCnBDzAzNrJuwNvicVW4YKeRpt7yks7En19dNDePcMJLV6mgxGyCpDTEn7',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxsF3De646fRzpt4aSiWbktD56Lnxe8QavRnMaWzDNckz83gopjbsorA6t3CDTcSYNfzeLF3WsaFhPw1oQY9Q992Y',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxtmPGpLi4fkz4EUd1cZ7cEDpAj1vgiXH3KAM2d5meCjjZDUsPX5FNV83M3WZTJSn3UNiPiQisiSPem1G4YgAHQna',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxZ7iVCpryzvGbPAUxr2uTP7hL8aWfprrQpZfkDVjN4iJ3Mnws523bZFh1CrKngwAKWZWNNQu3agaTMDwFQbzivH3',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCxzDgmDX8e3bXYNhe1y6a9T6e9TgzCqxmMoT4o1Yq4d51u3hkQZM6zYRMMiLsjcvDNAm25BRFSNusJnxxtFz5NWaH',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCy9ug6jRfU3N8GHcgp57GarYoa1TQ4SaGhNDmWkFpd5FNYpgCUQGNiZbXf4ymHeGfopUw16GqfUibmb7N3bDj6iL6',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCyDBhV6F8f8vTzeaCtgSCGfdA5zKSFe9j9gvCR2pZtWfWbeApQM1LoS7CftbhpNncVBxeevs7Bunw3eJcHkVKMcub',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCyDhPCQcGUR2dt7Ss9b2way7HuaJSTHtB9qsdGitPyckAg2wfLPHh5pSohCEQepxNv4Xq9V4KMp9tF8hyWGo6G2Wc',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCyjxSRkXNSpiKqevQMRdog1nyG1hcFURC4gNJp7VP6xdjK8VnXbGVHgZAJPFXdVsiCdNHvnCutuo5DWa46QTsqD6d',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCyPc3qxtPXob4FR873F9kdn2S5hYV7PwvZkswBUMFyGZ9tCd9SBhgqR8EMp8baDndUQYp1vfeAND6gZXXGTcQRmjj',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCyrP17F98Fbg6V9UbaPU38E9eQ218oziTxrqghMpywKsdTCPFwdaCT2wEMHBqFaMUxK2nrDtsX9uxyqRyAZofncYT',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCytGsQGsEmgfsYXPmLWdK1msCVCZVbjwdZM7dKSYpR6FZYrcJ9VgqRAhZ7ChQkkP5JMZUxcPurZs4geZxMoaAxFxv',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCyy4hBR7S81BmYrkipZBVPdkm1TWHkMHeRHXg9hvVwcqJYyQ24gvbst17WkPtrs9iUvjhyAnj4yhRTH7XRLkPD2o6',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCyYJtRDx1FrDK64Mm3ZWVo9935XVrYiUsUP9qoUDXb8x3UNKpWwFGYLWpLW7979NtqTEFCLX6CBRbEjTfJexWfLRu',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCzAX6QSURDh5xZ25neiuuxoHaruBYgvcs7gKbfQuX6MCWNJUdrcDMCi8gNQ6VJbGVRGAPqUJ4UMPcy3XRrQJTtcGF',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCzC5yEybTQj6xPLDwF8xKEDGBy8cyrjiuTDAedtLYdgpBGWcfeBAHNcETAKnVNMmirb5Lx7P6dtiqZiLY5PViueH1',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCzECUuZoKsWgRtX24yrgm7PfavmW1yDN5BBqsQLXRkhE5Fi7dNWpeAzimM2Mkqo2wjyxe18Wzn5dfLCvbznFpQMxh',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCzhBFqsoh8vJNJozYcfxYroLzhS12iYV9eSAGm6A1KC9jrwNNBdqd9QUiXLvFdiGC3bdQF7nfXfnUiVVgpJ6ucdvj',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCzkMviRgXicDyQsp5wkc24ybRyWH1CT2Nu6Ja6rXSf26FM9gG88Ye4rSSSFLn8tx5BfdT9HaQy2hWcaszcAdH4H31',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCzUiY6Qcdwim5gGmEqTr2HMQ22ZiVgFrQppyq1j7p9Lu9wdtoyp4MQurH4Wq9oEMNzuxMo7Jc3gxj4d7nZ6CDxP7v',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSD1163KVt18uBKtkdMyyee43zadfbXo5F21u4nT414FXTRF61dSiN9sAxh7xPMqSKE3FYCxA3N5kFYh3AJvhXTu7qW',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSD1CmiEgfNEjBNCo4amu5br1Qf7Fu6PJztJp3JfAp6CQxv3kRuUMwE66NaRpH4FFZQtPZdNJjG96sz6fYFBLqDND5N',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSD1DNKpffa254bkjcdrsmspd73gXWo6u3AD6bzzPbCDcFxt2GazeubNXy5ok13zpc4yQ1WsK2oNynsaPEcSM7CTsB1',
+            'PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSD1SsNCer6hmU5t4nKdourTCquG4WugHggJcLfiTNaN2VYF7A7Nwgn3HdCTz82hNqTZ6xaX7JL818eh2VteHgr6vhT',
+        ];
+
+            foreach ($mns as $mn) {
+                $db->run("DELETE FROM masternode WHERE public_key=:p", [":p"=>$mn]);
+            }
+            // their locked coins are added to dev's safewallet
+            $id=hex2coin(hash("sha512", "hf".$block.$height.'compromised-masternodes'));
+            $res=$db->run(
+                        "INSERT into transactions SET id=:id, block=:block, height=:height, dst=:dst, val=4700000, fee=0, signature=:sig, version=0, message=:msg, date=:date, public_key=:public_key",
+            [":id"=>$id, ":block"=>$block, ":height"=>$height, ":dst"=>'4kWXV4HMuogUcjZBEzmmQdtc1dHzta6VykhCV1HWyEXK7kRWEMJLNoMWbuDwFMTfBrq5a9VthkZfmkMkamTfwRBP', ":sig"=>$id, ":msg"=>'compromised-masternodes-hf', ":date"=>time(), ":public_key"=>'4kWXV4HMuogUcjZBEzmmQdtc1dHzta6VykhCV1HWyEXK7kRWEMJLNoMWbuDwFMTfBrq5a9VthkZfmkMkamTfwRBP']
+            );
+            $db->run("UPDATE accounts SET balance=balance+4700000 where id='4kWXV4HMuogUcjZBEzmmQdtc1dHzta6VykhCV1HWyEXK7kRWEMJLNoMWbuDwFMTfBrq5a9VthkZfmkMkamTfwRBP' LIMIT 1");
+        }
+    }
+
 
     // resets the number of fails when winning a block and marks it with a transaction
 
@@ -276,7 +346,7 @@ class Block
         // before mnn hf
         if ($height<80000) {
             // elapsed time between the last 20 blocks
-            $first = $db->row("SELECT `date` FROM blocks  ORDER by height DESC LIMIT :limit,1",[":limit"=>$limit]);
+            $first = $db->row("SELECT `date` FROM blocks  ORDER by height DESC LIMIT :limit,1", [":limit"=>$limit]);
             $time = $current['date'] - $first['date'];
 
             // avg block time

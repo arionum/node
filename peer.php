@@ -145,7 +145,7 @@ if ($q == "peer") {
     if ($balance - $memspent < $val + $fee) {
         api_err("Not enough funds (mempool)");
     }
-
+  
     // add to mempool
     $trx->add_mempool($data, $ip);
 
