@@ -601,7 +601,7 @@ class Transaction
     }
 
     // return the transactions for a specific block id or height
-    public function get_transactions($height = "", $id = "")
+    public function get_transactions($height = "", $id = "", $includeMiningRewards = false)
     {
         global $db;
         $block = new Block();
@@ -612,10 +612,11 @@ class Transaction
         if (empty($id) && empty($height)) {
             return false;
         }
+        $version_limit = $includeMiningRewards ? 0 : 1;
         if (!empty($id)) {
-            $r = $db->run("SELECT * FROM transactions WHERE block=:id AND version>0", [":id" => $id]);
+            $r = $db->run("SELECT * FROM transactions WHERE block=:id AND version >= :version", [":id" => $id, ":version" => $version_limit]);
         } else {
-            $r = $db->run("SELECT * FROM transactions WHERE height=:height AND version>0", [":height" => $height]);
+            $r = $db->run("SELECT * FROM transactions WHERE height=:height AND version >= :version", [":height" => $height, ":version" => $version_limit]);
         }
         $res = [];
         foreach ($r as $x) {
