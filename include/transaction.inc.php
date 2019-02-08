@@ -612,11 +612,11 @@ class Transaction
         if (empty($id) && empty($height)) {
             return false;
         }
-        $version_limit = $includeMiningRewards ? 0 : 1;
+        $versionLimit = $includeMiningRewards ? 0 : 1;
         if (!empty($id)) {
-            $r = $db->run("SELECT * FROM transactions WHERE block=:id AND version >= :version", [":id" => $id, ":version" => $version_limit]);
+            $r = $db->run("SELECT * FROM transactions WHERE block=:id AND version >= :version", [":id" => $id, ":version" => $versionLimit]);
         } else {
-            $r = $db->run("SELECT * FROM transactions WHERE height=:height AND version >= :version", [":height" => $height, ":version" => $version_limit]);
+            $r = $db->run("SELECT * FROM transactions WHERE height=:height AND version >= :version", [":height" => $height, ":version" => $versionLimit]);
         }
         $res = [];
         foreach ($r as $x) {

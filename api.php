@@ -362,11 +362,10 @@ if ($q == "getAddress") {
      */
     $height = san($data['height']);
     $block = san($data['block']);
-    $includeMiningRewards = san($data['includeMiningRewards'] ?? '');
-    if(empty($includeMiningRewards) || $includeMiningRewards == '0' || $includeMiningRewards == 'false')
-        $includeMiningRewards = false;
-    else
-        $includeMiningRewards = true;
+    $includeMiningRewards = (
+        isset($data['includeMiningRewards']) &&
+        !($data['includeMiningRewards'] === '0' || $data['includeMiningRewards'] === 'false')
+    );
 
     $ret = $trx->get_transactions($height, $block, $includeMiningRewards);
 
