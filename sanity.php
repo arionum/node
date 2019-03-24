@@ -708,13 +708,13 @@ if ($_config['disable_repropagation'] == false) {
     $forgotten = $current['height'] - $_config['sanity_rebroadcast_height'];
     $r1 = $db->run(
     "SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",
-    [":forgotten" => $forgotten];
+    [":forgotten" => $forgotten]);
     // getting some random transactions as well
     $r2 = $db->run(
     "SELECT id FROM mempool WHERE height<:forgotten ORDER by RAND() LIMIT 10",
-    [":forgotten" => $forgotten];
+    [":forgotten" => $forgotten]);
     $r=array_merge($r1,$r2);
-);
+
 
     _log("Rebroadcasting external transactions - ".count($r));
 
