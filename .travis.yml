@@ -2,24 +2,21 @@ dist: trusty
 language: php
 
 php:
-  - 7.2
-  - nightly
+- 7.2
+- 7.3
+- nightly
 
 matrix:
   allow_failures:
-    - php: nightly
-
-# This triggers builds to run on the new TravisCI infrastructure.
-# See: https://docs.travis-ci.com/user/reference/trusty#Container-based-with-sudo%3A-false
-sudo: false
+  - php: nightly
 
 ## Cache composer
 cache:
   directories:
-    - $HOME/.composer/cache
+  - $HOME/.composer/cache
 
 before_script:
-  - travis_retry composer update --no-interaction --prefer-dist
+- travis_retry composer update --no-interaction --prefer-dist
 
 script:
-  - vendor/bin/phpcs -l --standard=psr2 . include
+- vendor/bin/phpcs -l --standard=psr2 . include
