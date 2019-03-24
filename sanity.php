@@ -689,7 +689,7 @@ $db->run("DELETE FROM `mempool` WHERE `date` < UNIX_TIMESTAMP()-(3600*24*14)");
 //rebroadcasting local transactions
 if ($_config['sanity_rebroadcast_locals'] == true && $_config['disable_repropagation'] == false) {
     $r = $db->run(
-        "SELECT id FROM mempool WHERE height>=:current and peer='local' order by `height` asc LIMIT 20",
+        "SELECT id FROM mempool WHERE height<:current and peer='local' order by `height` asc LIMIT 20",
         [":current" => $current['height']]
     );
     _log("Rebroadcasting local transactions - ".count($r));
@@ -706,9 +706,14 @@ if ($_config['sanity_rebroadcast_locals'] == true && $_config['disable_repropaga
 //rebroadcasting transactions
 if ($_config['disable_repropagation'] == false) {
     $forgotten = $current['height'] - $_config['sanity_rebroadcast_height'];
-    $r = $db->run(
+    $r1 = $db->run(
     "SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",
-    [":forgotten" => $forgotten]
+    [":forgotten" => $forgotten];
+    // getting some random transactions as well
+    $r2 = $db->run(
+    "SELECT id FROM mempool WHERE height<:forgotten ORDER by RAND() LIMIT 10",
+    [":forgotten" => $forgotten];
+    $r=array_merge($r1,$r2);
 );
 
     _log("Rebroadcasting external transactions - ".count($r));
