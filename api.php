@@ -343,6 +343,7 @@ if ($q == "getAddress") {
      *
      * @apiParam {numeric} [height] Block Height
      * @apiParam {string} [block] Block id
+     * @apiParam {boolean} [includeMiningRewards] Include mining rewards
      *
      * @apiSuccess {string} block  Block ID
      * @apiSuccess {numeric} confirmations Number of confirmations
@@ -361,7 +362,13 @@ if ($q == "getAddress") {
      */
     $height = san($data['height']);
     $block = san($data['block']);
-    $ret = $trx->get_transactions($height, $block);
+    $includeMiningRewards = (
+        isset($data['includeMiningRewards']) &&
+        !($data['includeMiningRewards'] === '0' || $data['includeMiningRewards'] === 'false')
+    );
+
+    $ret = $trx->get_transactions($height, $block, $includeMiningRewards);
+
     if ($ret === false) {
         api_err("Invalid block");
     } else {

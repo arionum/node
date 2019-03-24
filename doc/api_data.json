@@ -548,6 +548,13 @@
             "optional": true,
             "field": "block",
             "description": "<p>Block id</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "boolean",
+            "optional": true,
+            "field": "includeMiningRewards",
+            "description": "<p>Include mining rewards</p>"
           }
         ]
       }
