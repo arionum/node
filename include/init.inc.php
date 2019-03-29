@@ -1,6 +1,6 @@
 <?php
 // ARO version
-define("VERSION", "0.4.4");
+define("VERSION", "0.4.5");
 // Amsterdam timezone by default, should probably be moved to config
 date_default_timezone_set("UTC");
 
