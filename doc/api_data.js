@@ -905,7 +905,7 @@ define({ "api": [
             "type": "numeric",
             "optional": true,
             "field": "limit",
-            "description": "<p>Number of confirmed transactions, max 1000, min 1</p>"
+            "description": "<p>Number of confirmed transactions, max 100, min 1</p>"
           }
         ]
       }
