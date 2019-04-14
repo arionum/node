@@ -463,7 +463,8 @@ elseif ($cmd == 'get-address') {
     }
     touch("tmp/sanity-lock");
     // lock table to avoid race conditions on blocks
-    $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE");
+    $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
+
 
     $r=$db->run("SELECT * FROM accounts");
     foreach ($r as $x) {

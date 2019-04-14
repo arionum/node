@@ -138,7 +138,7 @@ class Account
         if ($orig!=$id) {
             return false;
         }
-        
+        // making sure the same alias can only be used in one place
         if ($db->single("SELECT COUNT(1) FROM accounts WHERE alias=:alias", [":alias"=>$id])==0) {
             return true;
         } else {

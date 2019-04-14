@@ -308,9 +308,9 @@ if ($total_peers == 0 && $_config['testnet'] == false) {
         }
         $peered[$pid] = 1;
         
-        if($_config['passive_peering'] == true){
+        if ($_config['passive_peering'] == true) {
             // does not peer, just add it to DB in passive mode
-            $db->run("INSERT into peers set hostname=:hostname, ping=0, reserve=0,ip=:ip",[":hostname"=>$peer, ":ip"=>md5($peer)]);
+            $db->run("INSERT into peers set hostname=:hostname, ping=0, reserve=0,ip=:ip", [":hostname"=>$peer, ":ip"=>md5($peer)]);
             $res=true;
         } else {
             // forces the other node to peer with us.
@@ -348,8 +348,8 @@ foreach ($r as $x) {
             _log("Peer $x[hostname] unresponsive");
             // if the peer is unresponsive, mark it as failed and blacklist it for a while
             $db->run(
-            "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
-            [":id" => $x['id']]
+                "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
+                [":id" => $x['id']]
         );
             continue;
         }
@@ -380,8 +380,8 @@ foreach ($r as $x) {
             }
             // make sure there's no peer in db with this ip or hostname
             if (!$db->single(
-            "SELECT COUNT(1) FROM peers WHERE ip=:ip or hostname=:hostname",
-            [":ip" => $peer['ip'], ":hostname" => $peer['hostname']]
+                "SELECT COUNT(1) FROM peers WHERE ip=:ip or hostname=:hostname",
+                [":ip" => $peer['ip'], ":hostname" => $peer['hostname']]
         )) {
                 $i++;
                 // check a max_test_peers number of peers from each peer
@@ -649,7 +649,8 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
             if ($resyncing==true) {
                 _log("Resyncing accounts");
                 $db->run("INSERT into config SET val=UNIX_TIMESTAMP(), cfg='last_resync' ON DUPLICATE KEY UPDATE val=UNIX_TIMESTAMP()");
-                $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE");
+                $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
+
 
                 $r=$db->run("SELECT * FROM accounts");
                 foreach ($r as $x) {
@@ -707,13 +708,15 @@ if ($_config['sanity_rebroadcast_locals'] == true && $_config['disable_repropaga
 if ($_config['disable_repropagation'] == false) {
     $forgotten = $current['height'] - $_config['sanity_rebroadcast_height'];
     $r1 = $db->run(
-    "SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",
-    [":forgotten" => $forgotten]);
+        "SELECT id FROM mempool WHERE height<:forgotten ORDER by val DESC LIMIT 10",
+        [":forgotten" => $forgotten]
+    );
     // getting some random transactions as well
     $r2 = $db->run(
-    "SELECT id FROM mempool WHERE height<:forgotten ORDER by RAND() LIMIT 10",
-    [":forgotten" => $forgotten]);
-    $r=array_merge($r1,$r2);
+        "SELECT id FROM mempool WHERE height<:forgotten ORDER by RAND() LIMIT 10",
+        [":forgotten" => $forgotten]
+    );
+    $r=array_merge($r1, $r2);
 
 
     _log("Rebroadcasting external transactions - ".count($r));
@@ -804,6 +807,21 @@ if ($_config['sanity_recheck_blocks'] > 0 && $_config['testnet'] == false) {
     }
     if ($all_blocks_ok) {
         echo "All checked blocks are ok\n";
+    }
+}
+
+// not too often to not cause load
+if (rand(0, 10)==1) {
+    // after 10000 blocks, clear asset internal transactions
+    $db->run("DELETE FROM transactions WHERE (version=57 or version=58 or version=59) AND height<:height", [":height"=>$current['height']-10000]);
+
+    // remove market orders that have been filled, after 10000 blocks
+    $r=$db->run("SELECT id FROM assets_market WHERE val_done=val or status=2");
+    foreach ($r as $x) {
+        $last=$db->single("SELECT height FROM transactions WHERE (public_key=:id or dst=:id2) ORDER by height DESC LIMIT 1", [":id"=>$x['id'], ":id2"=>$x['id']]);
+        if ($current['height']-$last>10000) {
+            $db->run("DELETE FROM assets_market WHERE id=:id", [":id"=>$x['id']]);
+        }
     }
 }
 

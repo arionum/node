@@ -37,7 +37,7 @@ class Block
             }
         }
         // lock table to avoid race conditions on blocks
-        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE");
+        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
 
         $reward = $this->reward($height, $data);
 
@@ -157,8 +157,12 @@ class Block
                 $db->exec("UNLOCK TABLES");
                 return false;
             }
+            
 
             $this->do_hard_forks($height, $hash);
+
+
+ 
         }
 
         // parse the block's transactions and insert them to db
@@ -167,6 +171,16 @@ class Block
         if (($height-1)%3==2 && $height>=80000&&$height<80458) {
             $this->blacklist_masternodes();
             $this->reset_fails_masternodes($public_key, $height, $hash);
+        }
+
+           // automated asset distribution, checked only every 1000 blocks to reduce load. Payouts every 10000 blocks.
+
+        if($height>11111  && $height%50==1 && $res==true){ //  every 50 for testing. No initial height set yet.
+            $res=$this->asset_distribute_dividends($height, $hash, $public_key, $date, $signature);
+        }
+
+        if($height>11111 && $res==true){
+            $res=$this->asset_market_orders($height, $hash, $public_key, $date, $signature);
         }
         // if any fails, rollback
         if ($res == false) {
@@ -179,6 +193,110 @@ class Block
         return true;
     }
 
+    public function asset_market_orders($height, $hash, $public_key, $date, $signature)
+    {
+        global $db;
+        $trx=new Transaction;
+        // checks all bid market orders ordered in the same way on all nodes
+        $r=$db->run("SELECT * FROM assets_market WHERE status=0 and val_done<val AND type='bid' ORDER by asset ASC, id ASC");
+        foreach($r as $x){
+            $finished=0;
+            //remaining part of the order
+            $val=$x['val']-$x['val_done'];
+                // starts checking all ask orders that are still valid and are on the same price. should probably adapt this to allow lower price as well in the future.
+                $asks=$db->run("SELECT * FROM assets_market WHERE status=0 and val_done<val AND asset=:asset AND price=:price AND type='ask' ORDER by price ASC, id ASC", [":asset"=>$x['asset'], ":price"=>$x['price']]); 
+                foreach($asks as $ask){
+                    //remaining part of the order
+                    $remaining=$ask['val']-$ask['val_done'];
+                    // how much of the ask should we use to fill the bid order
+                    $use=0;
+                    if($remaining>$val){ 
+                        $use=$remaining-$val;
+                    } else {
+                        $use=$remaining;
+                    }
+                    $val-=$use;
+                    $db->run("UPDATE assets_market SET val_done=val_done+:done WHERE id=:id",[":id"=>$ask['id'], ":done"=>$use]);
+                    $db->run("UPDATE assets_market SET val_done=val_done+:done WHERE id=:id",[":id"=>$x['id'], ":done"=>$use]);
+                    // if we filled the order, we should exit the loop
+                    $db->run("INSERT into assets_balance SET account=:account, asset=:asset, balance=:balance ON DUPLICATE KEY UPDATE balance=balance+:balance2",[":account"=>$x['account'], ":asset"=>$x['asset'], ":balance"=>$use, ":balance2"=>$use]);
+                    $aro=$use*$x['price'];
+                    $db->run("UPDATE accounts SET balance=balance+:balance WHERE id=:id",[":balance"=>$aro, ":id"=>$ask['account']]);
+
+                    $random = hex2coin(hash("sha512", $x['id'].$ask['id'].$val.$hash));
+                    $new = [
+                        "id"         => $random,
+                        "public_key" => $x['id'],
+                        "dst"        => $ask['id'],
+                        "val"        => $aro,
+                        "fee"        => 0,
+                        "signature"  => $signature,
+                        "version"    => 58,
+                        "date"       => $date,
+                        "message"    => $use
+                    ];
+                    
+                    $res=$trx->add($hash,$height,$new);
+                    if(!$res){
+                        return false;
+                    }
+                    if($val<=0){
+                        break;
+                    }
+                }
+        }
+
+
+
+        return true;
+    }
+
+
+    public function asset_distribute_dividends($height, $hash, $public_key, $date, $signature)
+    {
+        global $db;
+        $trx=new Transaction;
+        _log("Starting automated dividend distribution",3);
+        // just the assets with autodividend
+        $r=$db->run("SELECT * FROM assets WHERE auto_dividend=1");
+        
+        if($r===false){
+            return true;
+        }
+        foreach($r as $x){
+            $asset=$db->row("SELECT id, public_key, balance FROM accounts WHERE id=:id",[":id"=>$x['id']]);
+            // minimum balance 1 aro
+            if($asset['balance']<1) {
+                _log("Asset $asset[id] not enough balance",3);
+                continue;
+            }
+            _log("Autodividend $asset[id] - $asset[balance] ARO",3);
+            // every 10000 blocks and at minimum 10000 of asset creation or last distribution, manual or automated
+            $last=$db->single("SELECT height FROM transactions WHERE (version=54 OR version=50 or version=57) AND public_key=:pub ORDER by height DESC LIMIT 1",[":pub"=>$asset['public_key']]);
+            if($height<$last+100){ // 100 for testnet
+                continue;
+            }
+            // generate a pseudorandom id  and version 54 transaction for automated dividend distribution. No fees for such automated distributions to encourage the system
+            $random = hex2coin(hash("sha512", $x['id'].$hash.$height));
+            $new = [
+                "id"         => $random,
+                "public_key" => $asset['public_key'],
+                "dst"        => $asset['id'],
+                "val"        => $asset['balance'],
+                "fee"        => 0,
+                "signature"  => $signature,
+                "version"    => 57,
+                "date"       => $date,
+                "src"        => $asset['id'],
+                "message"    => '',
+            ];
+            $res=$trx->add($hash,$height,$new);
+            if(!$res){
+                return false;
+            }
+        }
+        return true;
+    }
     public function do_hard_forks($height, $block)
     {
         global $db;
@@ -965,7 +1083,8 @@ class Block
             return;
         }
         $db->beginTransaction();
-        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE");
+        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
+
         foreach ($r as $x) {
             $res = $trx->reverse($x['id']);
             if ($res === false) {
@@ -1002,7 +1121,8 @@ class Block
         }
         // avoid race conditions on blockchain manipulations
         $db->beginTransaction();
-        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE");
+        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
+
         // reverse all transactions of the block
         $res = $trx->reverse($x['id']);
         if ($res === false) {
@@ -1066,7 +1186,7 @@ class Block
         $r = $db->run("SELECT * FROM transactions WHERE version>0 AND block=:block", [":block" => $block['id']]);
         $transactions = [];
         foreach ($r as $x) {
-            if ($x['version']>110) {
+            if ($x['version']>110||$x['version']==57||$x['version']==58||$x['version']==59) {
                 //internal transactions
                 continue;
             }

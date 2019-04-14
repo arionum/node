@@ -70,7 +70,7 @@ header('Content-Type: application/json');
 use Arionum\Blacklist;
 
 require_once __DIR__.'/include/init.inc.php';
-error_reporting(0);
+
 $ip = san_ip($_SERVER['REMOTE_ADDR']);
 $ip = filter_var($ip, FILTER_VALIDATE_IP);
 
@@ -419,6 +419,8 @@ if ($q == "getAddress") {
         $version = 1;
     }
 
+  
+    
     if ($version==1) {
         if (!$acc->valid($dst)) {
             api_err("Invalid destination address");
@@ -435,7 +437,8 @@ if ($q == "getAddress") {
         }
     }
 
-
+ 
+    
 
     $public_key = san($data['public_key']);
     if (!$acc->valid_key($public_key)) {
@@ -446,6 +449,9 @@ if ($q == "getAddress") {
             api_err("Blacklisted account");
         }
     }
+
+
+
     $private_key = san($data['private_key']);
     if (!$acc->valid_key($private_key)) {
         api_err("Invalid private key");
@@ -466,6 +472,7 @@ if ($q == "getAddress") {
         api_err("Invalid Date");
     }
 
+
     $message=$data['message'];
     if (strlen($message) > 128) {
         api_err("The message must be less than 128 chars");
@@ -483,6 +490,7 @@ if ($q == "getAddress") {
     if ($val < 0.00000001) {
         api_err("Invalid value");
     }
+
 
     // set alias
     if ($version==3) {
@@ -519,6 +527,9 @@ if ($q == "getAddress") {
     if (empty($private_key) && empty($signature)) {
         api_err("Either the private_key or the signature must be sent");
     }
+
+
+
     if (empty($public_key)) {
         $pk = coin2pem($private_key, true);
         $pkey = openssl_pkey_get_private($pk);
@@ -547,10 +558,10 @@ if ($q == "getAddress") {
 
 
 
+
     if (!$trx->check($transaction)) {
         api_err("Transaction signature failed");
     }
-
 
     $res = $db->single("SELECT COUNT(1) FROM mempool WHERE id=:id", [":id" => $hash]);
     if ($res != 0) {
@@ -771,6 +782,25 @@ if ($q == "getAddress") {
         }
     }
     api_echo(true);
+} elseif ($q === "assetBalance"){
+
+    $public_key = $data['public_key'];
+    $account = $data['account'];
+    if (!empty($public_key) && strlen($public_key) < 32) {
+        api_err("Invalid public key");
+    }
+    if (!empty($public_key)) {
+        $account = $acc->get_address($public_key);
+    }
+
+    if (empty($account)) {
+        api_err("Invalid account id");
+    }
+    $account = san($account);
+
+    $r=$db->run("SELECT asset, alias, assets_balance.balance FROM assets_balance LEFT JOIN accounts ON accounts.id=assets_balance.asset WHERE assets_balance.account=:account LIMIT 1000",[":account"=>$account]);
+    api_echo($r);
+
 } else {
     api_err("Invalid request");
 }
