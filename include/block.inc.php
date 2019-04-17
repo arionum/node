@@ -211,7 +211,7 @@ class Block
                     // how much of the ask should we use to fill the bid order
                     $use=0;
                     if($remaining>$val){ 
-                        $use=$remaining-$val;
+                        $use=$val;
                     } else {
                         $use=$remaining;
                     }
