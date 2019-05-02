@@ -185,7 +185,7 @@ if ($q == "getAddress") {
      *
      * @apiParam {string} [public_key] Public key
      * @apiParam {string} [account] Account id / address
-     * @apiParam {numeric} [limit] Number of confirmed transactions, max 1000, min 1
+     * @apiParam {numeric} [limit] Number of confirmed transactions, max 100, min 1
      *
      * @apiSuccess {string} block  Block ID
      * @apiSuccess {numeric} confirmation Number of confirmations
