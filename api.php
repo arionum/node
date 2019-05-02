@@ -800,6 +800,36 @@ if ($q == "getAddress") {
 
     $r=$db->run("SELECT asset, alias, assets_balance.balance FROM assets_balance LEFT JOIN accounts ON accounts.id=assets_balance.asset WHERE assets_balance.account=:account LIMIT 1000",[":account"=>$account]);
     api_echo($r);
+} elseif ($q === "asset-orders"){
+    $asset = san($data['asset']);
+    $account = san($data['account']);
+    if(empty($asset)&&empty($account)){
+        api_err("An asset or an account are necessary");
+    }
+    $whr="status=0";
+    $bind=[];
+    if(!empty($asset)){
+        $whr.=" AND asset=:asset ";
+        $bind[':asset']=$asset;
+    }
+    if(!empty($account)){
+        $whr.=" AND account=:account ";
+        $bind[':account']=$account;
+    }
+
+    $r=$db->run("SELECT * FROM assets_market WHERE $whr", $bind);
+    api_echo($r);
+
+} elseif ($q === "assets"){
+    $asset = san($data['asset']);
+    $whr="";
+    $bind=[];
+    if(!empty($asset)){
+        $whr.=" WHERE assets.id=:asset ";
+        $bind[':asset']=$asset;
+    }
+    $r=$db->run("SELECT assets.*, accounts.alias, accounts.balance FROM assets LEFT JOIN accounts ON accounts.id=assets.id $whr LIMIT 1000",$bind);
+    api_echo($r);
 
 } else {
     api_err("Invalid request");
