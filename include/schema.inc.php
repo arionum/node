@@ -147,7 +147,7 @@ if ($dbversion == 7) {
     $dbversion++;
 }
 if ($dbversion == 8) {
-  $db->run("CREATE TABLE `masternode` (
+    $db->run("CREATE TABLE `masternode` (
     `public_key` varchar(128) COLLATE utf8mb4_bin NOT NULL,
     `height` int(11) NOT NULL,
     `ip` varchar(16) COLLATE utf8mb4_bin NOT NULL,
@@ -157,21 +157,21 @@ if ($dbversion == 8) {
     `status` tinyint(4) NOT NULL DEFAULT '1'
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;");
 
-  $db->run("ALTER TABLE `masternode`
+    $db->run("ALTER TABLE `masternode`
   ADD PRIMARY KEY (`public_key`),
   ADD KEY `last_won` (`last_won`),
   ADD KEY `status` (`status`),
   ADD KEY `blacklist` (`blacklist`),
   ADD KEY `height` (`height`);");
-  $dbversion++;
+    $dbversion++;
 }
 if ($dbversion = 9) {
-  //dev only
-  $dbversion++;
+    //dev only
+    $dbversion++;
 }
 if ($dbversion = 10) {
-  //assets system
-  $db->run("
+    //assets system
+    $db->run("
   CREATE TABLE `assets` (
     `id` varbinary(128) NOT NULL,
     `max_supply` bigint(18) NOT NULL DEFAULT '0',
@@ -183,11 +183,11 @@ if ($dbversion = 10) {
     `height` int(11) NOT NULL DEFAULT '0'
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
   ");
-  $db->run("
+    $db->run("
   ALTER TABLE `assets`
   ADD PRIMARY KEY (`id`)
   ");
-  $db->run("
+    $db->run("
   CREATE TABLE `assets_market` (
     `id` varchar(128) COLLATE utf8mb4_bin NOT NULL,
     `account` varbinary(128) NOT NULL,
@@ -201,24 +201,44 @@ if ($dbversion = 10) {
     `cancelable`  tinyint(1) NOT NULL DEFAULT '1'
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;  
   ");
-  $db->run("
+    $db->run("
   ALTER TABLE `assets_market`
   ADD PRIMARY KEY (`id`);
   ");
-  $db->run("CREATE TABLE `assets_balance` (
+    $db->run("CREATE TABLE `assets_balance` (
     `account` varbinary(128) NOT NULL,
     `asset` varbinary(128) NOT NULL,
     `balance` bigint(128) NOT NULL DEFAULT '0'
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
   ");
 
-  $db->run("
+    $db->run("
   ALTER TABLE `assets_balance`
   ADD PRIMARY KEY (`account`,`asset`);
   ");
 
-  $dbversion++;
+    $dbversion++;
 }
+
+if ($dbversion = 11) {
+    $db->run("ALTER TABLE `transactions` ADD INDEX(`version`); ");
+    $db->run("ALTER TABLE `transactions` ADD INDEX(`message`); ");
+    $db->run("
+    CREATE TABLE `logs` (
+      `id` int(11) NOT NULL,
+      `transaction` varbinary(128) NOT NULL,
+      `json` text DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+    $db->run("ALTER TABLE `logs`
+    ADD PRIMARY KEY (`id`),
+    ADD KEY `transaction` (`transaction`);");
+    $db->run("ALTER TABLE `logs` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;");
+
+    $db->run("ALTER TABLE `masternode` ADD `vote_key` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL AFTER `status`; ");
+    
+    $dbversion++;
+}
+
 
 
 // update the db version to the latest one

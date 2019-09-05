@@ -43,6 +43,31 @@ class Block
 
         $msg = '';
 
+        $mn_reward_rate=0.33;
+  
+        // hf
+        if($height>212000){
+            $votes=[];
+            $r=$db->run("SELECT id,val FROM votes");
+            foreach($r as $vote){
+                $votes[$vote['id']]=$vote['val'];
+            }
+            // emission cut by 30%
+            if($votes['emission30']==1){
+                $reward=round($reward*0.7);
+            }
+            // 50% to masternodes
+            if($votes['masternodereward50']==1){
+                $mn_reward_rate=0.5;
+            }
+            // minimum reward to always be 50 aro
+            if($votes['endless50reward']==1&&$reward<50){
+                $reward=50;
+            }
+
+        }
+
+
         if ($height>=80458) {
             //reward the masternode
 
@@ -52,7 +77,7 @@ class Block
             );
             _log("MN Winner: $mn_winner", 2);
             if ($mn_winner!==false) {
-                $mn_reward=round(0.33*$reward, 8);
+                $mn_reward=round($mn_reward_rate*$reward, 8);
                 $reward=round($reward-$mn_reward, 8);
                 $reward=number_format($reward, 8, ".", "");
                 $mn_reward=number_format($mn_reward, 8, ".", "");
@@ -674,17 +699,41 @@ class Block
 
         // reward transaction and signature
         $reward = $this->reward($height, $data);
+        $mn_reward_rate=0.33;
+        global $db;
+        // hf
+        if($height>212000){
+            $votes=[];
+            $r=$db->run("SELECT id,val FROM votes");
+            foreach($r as $vote){
+                $votes[$vote['id']]=$vote['val'];
+            }
+            // emission cut by 30%
+            if($votes['emission30']==1){
+                $reward=round($reward*0.7);
+            }
+            // 50% to masternodes
+            if($votes['masternodereward50']==1){
+                $mn_reward_rate=0.5;
+            }
+
+            // minimum reward to always be 50 aro
+            if($votes['endless50reward']==1&&$reward<50){
+                $reward=50;
+            }
+
+        }
 
         if ($height>=80458) {
             //reward the masternode
-            global $db;
+            
             $mn_winner=$db->single(
                 "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 1",
                 [":current"=>$height, ":start"=>$height-360]
             );
             _log("MN Winner: $mn_winner", 2);
             if ($mn_winner!==false) {
-                $mn_reward=round(0.33*$reward, 8);
+                $mn_reward=round($mn_reward_rate*$reward, 8);
                 $reward=round($reward-$mn_reward, 8);
                 $reward=number_format($reward, 8, ".", "");
                 $mn_reward=number_format($mn_reward, 8, ".", "");
