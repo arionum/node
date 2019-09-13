@@ -2,6 +2,33 @@
 
 class Block
 {
+    public function add_log($hash, $log)
+    {
+        global $db;
+        $hash=san($hash);
+        //$json=["table"=>"masternode", "key"=>"public_key","id"=>$x['public_key'], "vals"=>['ip'=>$current_ip] ];
+        $db->run("INSERT into logs SET block=:id, json=:json", [':id'=>$hash, ":json"=>json_encode($log)]);
+    }
+    public function reverse_log($hash)
+    {
+        global $db;
+        $r=$db->run("SELECT json, id FROM logs WHERE block=:id ORDER by id DESC", [":id"=>$hash]);
+        foreach ($r as $json) {
+            $old=json_decode($json['json'], true);
+            if ($old!==false&&is_array($old)) {
+                //making sure there's no sql injection here, as the table name and keys are sanitized to A-Za-z0-9_
+                $table=san($old['table']);
+                $key=san($old['key'], '_');
+                $id=san($old['id'], '_');
+                foreach ($old['vals'] as $v=>$l) {
+                    $v=san($v, '_');
+                    $db->run("UPDATE `$table` SET `$v`=:val WHERE `$key`=:keyid", [":keyid"=>$id, ":val"=>$l]);
+                }
+            }
+            $db->run("DELETE FROM logs WHERE id=:id", [":id"=>$json['id']]);
+        }
+    }
+
     public function add($height, $public_key, $nonce, $data, $date, $signature, $difficulty, $reward_signature, $argon, $bootstrapping=false)
     {
         global $db;
@@ -37,7 +64,7 @@ class Block
             }
         }
         // lock table to avoid race conditions on blocks
-        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
+        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE, votes WRITE, logs WRITE");
 
         $reward = $this->reward($height, $data);
 
@@ -46,25 +73,24 @@ class Block
         $mn_reward_rate=0.33;
   
         // hf
-        if($height>212000){
+        if ($height>216000) {
             $votes=[];
             $r=$db->run("SELECT id,val FROM votes");
-            foreach($r as $vote){
+            foreach ($r as $vote) {
                 $votes[$vote['id']]=$vote['val'];
             }
             // emission cut by 30%
-            if($votes['emission30']==1){
+            if ($votes['emission30']==1) {
                 $reward=round($reward*0.7);
             }
             // 50% to masternodes
-            if($votes['masternodereward50']==1){
+            if ($votes['masternodereward50']==1) {
                 $mn_reward_rate=0.5;
             }
-            // minimum reward to always be 50 aro
-            if($votes['endless50reward']==1&&$reward<50){
-                $reward=50;
+            // minimum reward to always be 10 aro
+            if ($votes['endless10reward']==1&&$reward<10) {
+                $reward=10;
             }
-
         }
 
 
@@ -84,7 +110,21 @@ class Block
                 _log("MN Reward: $mn_reward", 2);
             }
         }
-
+        $cold_winner=false;
+        $cold_reward=0;
+        if ($height>216000) {
+            if ($votes['coldstacking']==1) {
+                $cold_reward=round($mn_reward*0.2, 8);
+                $mn_reward=$mn_reward-$cold_reward;
+                $mn_reward=number_format($mn_reward, 8, ".", "");
+                $cold_reward=number_format($cold_reward, 8, ".", "");
+                $cold_winner=$db->single(
+                        "SELECT public_key FROM masternode WHERE height<:start ORDER by cold_last_won ASC, public_key ASC LIMIT 1",
+                        [":current"=>$height, ":start"=>$height-360]
+                    );
+                _log("Cold MN Winner: $mn_winner", 2);
+            }
+        }
 
         
 
@@ -147,7 +187,39 @@ class Block
             $db->exec("UNLOCK TABLES");
             return false;
         }
+        //masternode rewards
         if ($mn_winner!==false&&$height>=80458&&$mn_reward>0) {
+            //cold stacking rewards
+            if ($cold_winner!==false&&$height>216000&&$cold_reward>0) {
+                $db->run("UPDATE accounts SET balance=balance+:bal WHERE public_key=:pub", [":pub"=>$cold_winner, ":bal"=>$cold_reward]);
+            
+                $bind = [
+            ":id"         => hex2coin(hash("sha512", "cold".$hash.$height.$cold_winner)),
+            ":public_key" => $public_key,
+            ":height"     => $height,
+            ":block"      => $hash,
+            ":dst"        => $acc->get_address($cold_winner),
+            ":val"        => $cold_reward,
+            ":fee"        => 0,
+            ":signature"  => $reward_signature,
+            ":version"    => 0,
+            ":date"       => $date,
+            ":message"    => 'masternode-cold',
+        ];
+                $res = $db->run(
+                "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
+                $bind
+        );
+                if ($res != 1) {
+                    // rollback and exit if it fails
+                    _log("Masternode Cold reward DB insert failed");
+                    $db->rollback();
+                    $db->exec("UNLOCK TABLES");
+                    return false;
+                }
+            }
+
+
             $db->run("UPDATE accounts SET balance=balance+:bal WHERE public_key=:pub", [":pub"=>$mn_winner, ":bal"=>$mn_reward]);
             $bind = [
             ":id"         => hex2coin(hash("sha512", "mn".$hash.$height.$mn_winner)),
@@ -163,8 +235,8 @@ class Block
             ":message"    => 'masternode',
         ];
             $res = $db->run(
-            "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
-            $bind
+                "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
+                $bind
         );
             if ($res != 1) {
                 // rollback and exit if it fails
@@ -185,9 +257,6 @@ class Block
             
 
             $this->do_hard_forks($height, $hash);
-
-
- 
         }
 
         // parse the block's transactions and insert them to db
@@ -198,23 +267,123 @@ class Block
             $this->reset_fails_masternodes($public_key, $height, $hash);
         }
 
-           // automated asset distribution, checked only every 1000 blocks to reduce load. Payouts every 10000 blocks.
+        // automated asset distribution, checked only every 1000 blocks to reduce load. Payouts every 10000 blocks.
 
-        if($height>11111  && $height%50==1 && $res==true){ //  every 50 for testing. No initial height set yet.
+        if ($height>216000  && $height%50==1 && $res==true) { //  every 50 for testing. No initial height set yet.
             $res=$this->asset_distribute_dividends($height, $hash, $public_key, $date, $signature);
         }
 
-        if($height>11111 && $res==true){
+        if ($height>216000 && $res==true) {
             $res=$this->asset_market_orders($height, $hash, $public_key, $date, $signature);
         }
+
+        if ($height>216000 && $height%10000==0) {
+            $res=$this->masternode_votes($public_key, $height, $hash);
+        }
+        
         // if any fails, rollback
         if ($res == false) {
+            _log("Rollback block",3);
             $db->rollback();
         } else {
+            _log("Commiting block",3);
             $db->commit();
         }
         // relese the locking as everything is finished
         $db->exec("UNLOCK TABLES");
+        return true;
+    }
+
+    public function masternode_votes($public_key, $height, $hash)
+    {
+        global $db;
+
+        $arodev='PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCvcUb8x4p38GFbZWaJKcncEWqUbe7YJtrDXomwn7DtDYuyYnN2j6s4nQxP1u9BiwCA8U4TjtC9Z21j3R3STLJSFyL';
+        //testnet
+        $arodev='PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSD1AyyUtViMXaRS1cLfRRwBgUYzDgqhHcssWSutK966KwBKTPJNpNxcb8snJomuL6jdNd9x53udEzHcq3ooL3MhYtB'; 
+
+        // masternode votes
+        if ($height%10000==0) {
+            _log("Checking masternode votes", 3);
+            $blacklist=[];
+            $total_mns=$db->single("SELECT COUNT(1) FROM masternode");
+            $total_mns_with_key=$db->single("SELECT COUNT(1) FROM masternode WHERE vote_key IS NOT NULL");
+            
+            // only if at least 50% of the masternodes have voting keys
+            if ($total_mns_with_key/$total_mns>0.50) {
+                _log("Counting the votes from other masternodes", 3);
+                $r=$db->run("SELECT message, count(message) as c FROM transactions WHERE version=106 AND height>:height group by message", [':height'=>$height-10000]);
+                foreach ($r as $x) {
+                    if ($x['c']>$total_mns/2) {
+                        $blacklist[]=san($x['message']);
+                    }
+                }
+            } else {
+                // If less than 50% of the mns have voting key, AroDev's votes are used
+                _log("Counting AroDev votes", 3);
+                $r=$db->run("SELECT message FROM transactions WHERE version=106 AND height>:height AND public_key=:pub", [':height'=>$height-10000, ":pub"=>$arodev]);
+                foreach ($r as $x) {
+                    $blacklist[]=san($x['message']);
+                }
+            }
+            $r=$db->run("SELECT public_key FROM masternode WHERE voted=1");
+            foreach ($r as $masternode) {
+                if (!in_array($masternode, $blacklist)) {
+                    _log("Masternode removed from voting blacklist - $masternode", 3);
+                    $this->add_log($hash, ["table"=>"masternode", "key"=>"public_key","id"=>$masternode, "vals"=>['voted'=>1]]);
+                    $db->run("UPDATE masternode SET voted=0 WHERE public_key=:pub", [":pub"=>$masternode]);
+                }
+            }
+
+            foreach ($blacklist as $masternode) {
+                $res=$db->single("SELECT voted FROM masternode WHERE public_key=:pub", [":pub"=>$masternode]);
+                if ($res==0) {
+                    _log("Masternode blacklist voted - $masternode", 3);
+                    $db->run("UPDATE masternode SET voted=1 WHERE public_key=:pub", [":pub"=>$masternode]);
+                    $this->add_log($hash, ["table"=>"masternode", "key"=>"public_key","id"=>$masternode, "vals"=>['voted'=>0]]);
+                }
+            }
+        }
+
+        // blockchain votes
+        $voted=[];
+        if ($height%100000==0) {
+
+             // only if at least 50% of the masternodes have voting keys
+            if ($total_mns_with_key/$total_mns>0.50) {
+                _log("Counting masternode blockchain votes", 3);
+                $r=$db->run("SELECT message, count(message) as c FROM transactions WHERE version=107 AND height>:height group by message", [':height'=>$height-100000]);
+                foreach ($r as $x) {
+                    if ($x['c']>$total_mns/1.5) {
+                        $voted[]=san($x['message']);
+                    }
+                }
+            } else {
+                _log("Counting AroDev blockchain votes", 3);
+                // If less than 50% of the mns have voting key, AroDev's votes are used
+                $r=$db->run("SELECT message FROM transactions WHERE version=107 AND height>:height AND public_key=:pub", [':height'=>$height-100000, ":pub"=>$arodev]);
+                foreach ($r as $x) {
+                    $voted[]=san($x['message']);
+                }
+            }
+
+
+            foreach ($voted as $vote) {
+                $v=$db->row("SELECT id, val FROM votes WHERE id=:id", [":id"=>$vote]);
+                if ($v) {
+                    if ($v['val']==0) {
+                        _log("Blockchain vote - $v[id] = 1", 3);
+                        $db->run("UPDATE votes SET val=1 WHERE id=:id", [":id"=>$v['id']]);
+                        $this->add_log($hash, ["table"=>"votes", "key"=>"id","id"=>$v['id'], "vals"=>['val'=>0]]);
+                    } else {
+                        _log("Blockchain vote - $v[id] = 0", 3);
+                        $db->run("UPDATE votes SET val=0 WHERE id=:id", [":id"=>$v['id']]);
+                        $this->add_log($hash, ["table"=>"votes", "key"=>"id","id"=>$v['id'], "vals"=>['val'=>1]]);
+                    }
+                }
+            }
+        }
+
         return true;
     }
 
@@ -224,32 +393,32 @@ class Block
         $trx=new Transaction;
         // checks all bid market orders ordered in the same way on all nodes
         $r=$db->run("SELECT * FROM assets_market WHERE status=0 and val_done<val AND type='bid' ORDER by asset ASC, id ASC");
-        foreach($r as $x){
+        foreach ($r as $x) {
             $finished=0;
             //remaining part of the order
             $val=$x['val']-$x['val_done'];
-                // starts checking all ask orders that are still valid and are on the same price. should probably adapt this to allow lower price as well in the future.
-                $asks=$db->run("SELECT * FROM assets_market WHERE status=0 and val_done<val AND asset=:asset AND price=:price AND type='ask' ORDER by price ASC, id ASC", [":asset"=>$x['asset'], ":price"=>$x['price']]); 
-                foreach($asks as $ask){
-                    //remaining part of the order
-                    $remaining=$ask['val']-$ask['val_done'];
-                    // how much of the ask should we use to fill the bid order
-                    $use=0;
-                    if($remaining>$val){ 
-                        $use=$val;
-                    } else {
-                        $use=$remaining;
-                    }
-                    $val-=$use;
-                    $db->run("UPDATE assets_market SET val_done=val_done+:done WHERE id=:id",[":id"=>$ask['id'], ":done"=>$use]);
-                    $db->run("UPDATE assets_market SET val_done=val_done+:done WHERE id=:id",[":id"=>$x['id'], ":done"=>$use]);
-                    // if we filled the order, we should exit the loop
-                    $db->run("INSERT into assets_balance SET account=:account, asset=:asset, balance=:balance ON DUPLICATE KEY UPDATE balance=balance+:balance2",[":account"=>$x['account'], ":asset"=>$x['asset'], ":balance"=>$use, ":balance2"=>$use]);
-                    $aro=$use*$x['price'];
-                    $db->run("UPDATE accounts SET balance=balance+:balance WHERE id=:id",[":balance"=>$aro, ":id"=>$ask['account']]);
+            // starts checking all ask orders that are still valid and are on the same price. should probably adapt this to allow lower price as well in the future.
+            $asks=$db->run("SELECT * FROM assets_market WHERE status=0 and val_done<val AND asset=:asset AND price=:price AND type='ask' ORDER by price ASC, id ASC", [":asset"=>$x['asset'], ":price"=>$x['price']]);
+            foreach ($asks as $ask) {
+                //remaining part of the order
+                $remaining=$ask['val']-$ask['val_done'];
+                // how much of the ask should we use to fill the bid order
+                $use=0;
+                if ($remaining>$val) {
+                    $use=$val;
+                } else {
+                    $use=$remaining;
+                }
+                $val-=$use;
+                $db->run("UPDATE assets_market SET val_done=val_done+:done WHERE id=:id", [":id"=>$ask['id'], ":done"=>$use]);
+                $db->run("UPDATE assets_market SET val_done=val_done+:done WHERE id=:id", [":id"=>$x['id'], ":done"=>$use]);
+                // if we filled the order, we should exit the loop
+                $db->run("INSERT into assets_balance SET account=:account, asset=:asset, balance=:balance ON DUPLICATE KEY UPDATE balance=balance+:balance2", [":account"=>$x['account'], ":asset"=>$x['asset'], ":balance"=>$use, ":balance2"=>$use]);
+                $aro=$use*$x['price'];
+                $db->run("UPDATE accounts SET balance=balance+:balance WHERE id=:id", [":balance"=>$aro, ":id"=>$ask['account']]);
 
-                    $random = hex2coin(hash("sha512", $x['id'].$ask['id'].$val.$hash));
-                    $new = [
+                $random = hex2coin(hash("sha512", $x['id'].$ask['id'].$val.$hash));
+                $new = [
                         "id"         => $random,
                         "public_key" => $x['id'],
                         "dst"        => $ask['id'],
@@ -261,14 +430,14 @@ class Block
                         "message"    => $use
                     ];
                     
-                    $res=$trx->add($hash,$height,$new);
-                    if(!$res){
-                        return false;
-                    }
-                    if($val<=0){
-                        break;
-                    }
+                $res=$trx->add($hash, $height, $new);
+                if (!$res) {
+                    return false;
                 }
+                if ($val<=0) {
+                    break;
+                }
+            }
         }
 
 
@@ -281,24 +450,24 @@ class Block
     {
         global $db;
         $trx=new Transaction;
-        _log("Starting automated dividend distribution",3);
+        _log("Starting automated dividend distribution", 3);
         // just the assets with autodividend
         $r=$db->run("SELECT * FROM assets WHERE auto_dividend=1");
         
-        if($r===false){
+        if ($r===false) {
             return true;
         }
-        foreach($r as $x){
-            $asset=$db->row("SELECT id, public_key, balance FROM accounts WHERE id=:id",[":id"=>$x['id']]);
+        foreach ($r as $x) {
+            $asset=$db->row("SELECT id, public_key, balance FROM accounts WHERE id=:id", [":id"=>$x['id']]);
             // minimum balance 1 aro
-            if($asset['balance']<1) {
-                _log("Asset $asset[id] not enough balance",3);
+            if ($asset['balance']<1) {
+                _log("Asset $asset[id] not enough balance", 3);
                 continue;
             }
-            _log("Autodividend $asset[id] - $asset[balance] ARO",3);
+            _log("Autodividend $asset[id] - $asset[balance] ARO", 3);
             // every 10000 blocks and at minimum 10000 of asset creation or last distribution, manual or automated
-            $last=$db->single("SELECT height FROM transactions WHERE (version=54 OR version=50 or version=57) AND public_key=:pub ORDER by height DESC LIMIT 1",[":pub"=>$asset['public_key']]);
-            if($height<$last+100){ // 100 for testnet
+            $last=$db->single("SELECT height FROM transactions WHERE (version=54 OR version=50 or version=57) AND public_key=:pub ORDER by height DESC LIMIT 1", [":pub"=>$asset['public_key']]);
+            if ($height<$last+100) { // 100 for testnet
                 continue;
             }
             // generate a pseudorandom id  and version 54 transaction for automated dividend distribution. No fees for such automated distributions to encourage the system
@@ -315,8 +484,8 @@ class Block
                 "src"        => $asset['id'],
                 "message"    => '',
             ];
-            $res=$trx->add($hash,$height,$new);
-            if(!$res){
+            $res=$trx->add($hash, $height, $new);
+            if (!$res) {
                 return false;
             }
         }
@@ -382,8 +551,8 @@ class Block
             // their locked coins are added to dev's safewallet
             $id=hex2coin(hash("sha512", "hf".$block.$height.'compromised-masternodes'));
             $res=$db->run(
-                        "INSERT into transactions SET id=:id, block=:block, height=:height, dst=:dst, val=4700000, fee=0, signature=:sig, version=0, message=:msg, date=:date, public_key=:public_key",
-            [":id"=>$id, ":block"=>$block, ":height"=>$height, ":dst"=>'4kWXV4HMuogUcjZBEzmmQdtc1dHzta6VykhCV1HWyEXK7kRWEMJLNoMWbuDwFMTfBrq5a9VthkZfmkMkamTfwRBP', ":sig"=>$id, ":msg"=>'compromised-masternodes-hf', ":date"=>time(), ":public_key"=>'4kWXV4HMuogUcjZBEzmmQdtc1dHzta6VykhCV1HWyEXK7kRWEMJLNoMWbuDwFMTfBrq5a9VthkZfmkMkamTfwRBP']
+                "INSERT into transactions SET id=:id, block=:block, height=:height, dst=:dst, val=4700000, fee=0, signature=:sig, version=0, message=:msg, date=:date, public_key=:public_key",
+                [":id"=>$id, ":block"=>$block, ":height"=>$height, ":dst"=>'4kWXV4HMuogUcjZBEzmmQdtc1dHzta6VykhCV1HWyEXK7kRWEMJLNoMWbuDwFMTfBrq5a9VthkZfmkMkamTfwRBP', ":sig"=>$id, ":msg"=>'compromised-masternodes-hf', ":date"=>time(), ":public_key"=>'4kWXV4HMuogUcjZBEzmmQdtc1dHzta6VykhCV1HWyEXK7kRWEMJLNoMWbuDwFMTfBrq5a9VthkZfmkMkamTfwRBP']
             );
             $db->run("UPDATE accounts SET balance=balance+4700000 where id='4kWXV4HMuogUcjZBEzmmQdtc1dHzta6VykhCV1HWyEXK7kRWEMJLNoMWbuDwFMTfBrq5a9VthkZfmkMkamTfwRBP' LIMIT 1");
         }
@@ -424,9 +593,8 @@ class Block
         $msg="$mn[blacklist],$mn[last_won],$mn[fails]";
         
         $res=$db->run(
-        
             "INSERT into transactions SET id=:id, block=:block, height=:height, dst=:dst, val=0, fee=0, signature=:sig, version=111, message=:msg, date=:date, public_key=:public_key",
-        [":id"=>$id, ":block"=>$hash, ":height"=>$height, ":dst"=>$hash, ":sig"=>$hash, ":msg"=>$msg, ":date"=>time(), ":public_key"=>$public_key]
+            [":id"=>$id, ":block"=>$hash, ":height"=>$height, ":dst"=>$hash, ":sig"=>$hash, ":msg"=>$msg, ":date"=>time(), ":public_key"=>$public_key]
         
         );
         if ($res!=1) {
@@ -524,14 +692,28 @@ class Block
             }
             $result=ceil($total_time/$blks);
             _log("Block time: $result", 3);
-            if ($result > 260) {
-                $dif = bcmul($current['difficulty'], 1.05);
-            } elseif ($result < 220) {
-                // if lower, decrease by 5%
-                $dif = bcmul($current['difficulty'], 0.95);
+            // 1 minute blocktime
+            if ($height>216000) {
+                if ($result > 65) {
+                    $dif = bcmul($current['difficulty'], 1.05);
+                } elseif ($result < 55) {
+                    // if lower, decrease by 5%
+                    $dif = bcmul($current['difficulty'], 0.95);
+                } else {
+                    // keep current difficulty
+                    $dif = $current['difficulty'];
+                }
             } else {
-                // keep current difficulty
-                $dif = $current['difficulty'];
+                // 4 minutes blocktime
+                if ($result > 260) {
+                    $dif = bcmul($current['difficulty'], 1.05);
+                } elseif ($result < 220) {
+                    // if lower, decrease by 5%
+                    $dif = bcmul($current['difficulty'], 0.95);
+                } else {
+                    // keep current difficulty
+                    $dif = $current['difficulty'];
+                }
             }
         } else {
             // hardfork 80000, fix difficulty targetting
@@ -607,17 +789,22 @@ class Block
     // calculate the reward for each block
     public function reward($id, $data = [])
     {
-        // starting reward
-        $reward = 1000;
+        if ($id>216000) {
+            // 1min block time
+            $reward=200;
+            $factor = floor(($id-216000) / 43200) / 100;
+            $reward -= $reward * $factor;
+        } else {
+            // starting reward
+            $reward = 1000;
+            // decrease by 1% each 10800 blocks (approx 1 month)
+            $factor = floor($id / 10800) / 100;
+            $reward -= $reward * $factor;
+        }
 
-        // decrease by 1% each 10800 blocks (approx 1 month)
-
-        $factor = floor($id / 10800) / 100;
-        $reward -= $reward * $factor;
         if ($reward < 0) {
             $reward = 0;
         }
-
         // calculate the transaction fees
         $fees = 0;
         if (count($data) > 0) {
@@ -702,26 +889,25 @@ class Block
         $mn_reward_rate=0.33;
         global $db;
         // hf
-        if($height>212000){
+        if ($height>216000) {
             $votes=[];
             $r=$db->run("SELECT id,val FROM votes");
-            foreach($r as $vote){
+            foreach ($r as $vote) {
                 $votes[$vote['id']]=$vote['val'];
             }
             // emission cut by 30%
-            if($votes['emission30']==1){
+            if ($votes['emission30']==1) {
                 $reward=round($reward*0.7);
             }
             // 50% to masternodes
-            if($votes['masternodereward50']==1){
+            if ($votes['masternodereward50']==1) {
                 $mn_reward_rate=0.5;
             }
 
-            // minimum reward to always be 50 aro
-            if($votes['endless50reward']==1&&$reward<50){
-                $reward=50;
+            // minimum reward to always be 10 aro
+            if ($votes['endless10reward']==1&&$reward<10) {
+                $reward=10;
             }
-
         }
 
         if ($height>=80458) {
@@ -1029,10 +1215,12 @@ class Block
                     _log("Transaction check failed - $x[id]", 3);
                     return false;
                 }
-                if ($x['version']>=100&&$x['version']<110) {
+                if ($x['version']>=100&&$x['version']<110&&$x['version']!=106&&$x['version']!=107) {
                     $mns[] = $x['public_key'];
                 }
-                
+                if($x['version']==106||$x['version']==107){
+                    $mns[]=$x['public_key'].$x['message'];
+                }
 
                 // prepare total balance
                 $balance[$x['src']] += $x['val'] + $x['fee'];
@@ -1054,8 +1242,8 @@ class Block
             // check if the account has enough balance to perform the transaction
             foreach ($balance as $id => $bal) {
                 $res = $db->single(
-                "SELECT COUNT(1) FROM accounts WHERE id=:id AND balance>=:balance",
-                [":id" => $id, ":balance" => $bal]
+                    "SELECT COUNT(1) FROM accounts WHERE id=:id AND balance>=:balance",
+                    [":id" => $id, ":balance" => $bal]
             );
                 if ($res == 0) {
                     _log("Not enough balance for transaction - $id", 3);
@@ -1132,7 +1320,7 @@ class Block
             return;
         }
         $db->beginTransaction();
-        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
+        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE, votes WRITE,logs WRITE");
 
         foreach ($r as $x) {
             $res = $trx->reverse($x['id']);
@@ -1149,7 +1337,10 @@ class Block
                 $db->exec("UNLOCK TABLES");
                 return false;
             }
+            $this->reverse_log($x['id']);
         }
+
+      
 
         $db->commit();
         $db->exec("UNLOCK TABLES");
@@ -1170,7 +1361,7 @@ class Block
         }
         // avoid race conditions on blockchain manipulations
         $db->beginTransaction();
-        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
+        $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE, votes WRITE, logs WRITE");
 
         // reverse all transactions of the block
         $res = $trx->reverse($x['id']);

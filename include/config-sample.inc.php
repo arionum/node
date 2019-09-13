@@ -154,3 +154,5 @@ $_config['masternode'] = false;
 
 // The public key for the masternode
 $_config['masternode_public_key'] = '';
+$_config['masternode_voting_public_key'] = '';
+$_config['masternode_voting_private_key'] = '';

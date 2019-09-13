@@ -457,6 +457,7 @@ elseif ($cmd == 'get-address') {
     $db->run("UPDATE peers SET blacklisted=0, fails=0, stuckfail=0");
     echo "All the peers have been removed from the blacklist\n";
 } elseif ($cmd == 'resync-accounts') {
+    die("Currently disabled due to asset implementation.");
     // resyncs the balance on all accounts
     if (file_exists("tmp/sanity-lock")) {
         die("Sanity running. Wait for it to finish");

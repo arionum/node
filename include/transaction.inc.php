@@ -26,6 +26,7 @@ class Transaction
                     $db->run("UPDATE `$table` SET `$v`=:val WHERE `$key`=:keyid", [":keyid"=>$id, ":val"=>$l]);
                 }
             }
+            $db->run("DELETE FROM logs WHERE id=:id",[":id"=>$json['id']]);
         }
     }
     // reverse and remove all transactions from a block
@@ -53,19 +54,19 @@ class Transaction
             } else {
                 // other type of transactions
        
-                if ($x['version']!=100 && $x['version']<111 && $x['version'] != 54 && $x['version'] != 57 && $x['version'] != 58) {
+                if ($x['version']!=100 && $x['version']<111 && $x['version'] != 54 && $x['version'] != 57 && $x['version'] != 58 && $x['val']>0) {
                     $rez=$db->run(
                         "UPDATE accounts SET balance=balance-:val WHERE id=:id",
                         [":id" => $x['dst'], ":val" => $x['val']]
                     );
                     if ($rez!=1) {
-                        _log("Update accounts balance minus failed ", 3);
+                        _log("Update accounts balance minus failed - $x[id]", 3);
                         return false;
                     }
                 }
             }
             // on version 0 / reward transaction, don't credit anyone
-            if ($x['version'] > 0 && $x['version']<111 && $x['version'] != 54 && $x['version'] != 57 && $x['version'] != 58) {
+            if ($x['version'] > 0 && $x['version']<111 && $x['version'] != 54 && $x['version'] != 57 && $x['version'] != 58 && ($x['val']+$x['fee'])>0) {
                 $rez=$db->run(
                     "UPDATE accounts SET balance=balance+:val WHERE id=:id",
                     [":id" => $x['src'], ":val" => $x['val'] + $x['fee']]
@@ -283,7 +284,16 @@ class Transaction
                         continue;
                     }
                 }
-
+                // single blockchain vote per block
+               
+                if ($x['version']==106||$x['version']==107) {
+                    $tid=$x['public_key'].$x['message'];
+                    if ($exists[$tid]==1) {
+                        continue;
+                    }
+                    $exists[$tid]=1;
+                }
+   
 
                 if (empty($x['public_key'])) {
                     _log("$x[id] - Transaction has empty public_key");
@@ -358,7 +368,7 @@ class Transaction
         ];
 
         //only a single masternode command of same type, per block
-        if ($x['version']>=100&&$x['version']<110) {
+        if ($x['version']>=100&&$x['version']<110&&$x['version']!=106&&$x['version']!=107) {
             $check=$db->single("SELECT COUNT(1) FROM mempool WHERE public_key=:public_key", [":public_key"=>$x['public_key']]);
             if ($check!=0) {
                 _log("Masternode transaction already in mempool", 3);
@@ -603,6 +613,8 @@ class Transaction
     {
         $info = $x['val']."-".$x['fee']."-".$x['dst']."-".$x['message']."-".$x['version']."-".$x['public_key']."-".$x['date']."-".$x['signature'];
         $hash = hash("sha512", $info);
+        //_log("Hashing: ".$info,3);
+        //_log("Hash: $hash",3);
         return hex2coin($hash);
     }
 
@@ -610,6 +622,11 @@ class Transaction
     public function check($x, $height = 0)
     {
         global $db;
+        // blocktime lowered by 1 minute after 216000
+        $blocktime_factor=1;
+        if($height>216000){
+            $blocktime_factor=4;
+        }
         // if no specific block, use current
         if ($height === 0) {
             $block = new Block();
@@ -694,7 +711,7 @@ class Transaction
             } elseif ($x['version']!=100) {
                 $mn=$acc->get_masternode($x['public_key']);
 
-                if ($x['dst']!=$src) {
+                if ($x['dst']!=$src&&$x['version']!=106) {
                     // just to prevent some bypasses in the future
                     _log("DST must be SRC for this transaction", 3);
                     return false;
@@ -713,20 +730,20 @@ class Transaction
                     if ($mn['status']!=0) {
                         _log("The masternode is not paused", 3);
                         return false;
-                    } elseif ($height-$mn['last_won']<10800) { //10800
+                    } elseif ($height-$mn['last_won']<10800*$blocktime_factor) { //10800
                         _log("The masternode last won block is less than 10800 blocks", 3);
                         return false;
-                    } elseif ($height-$mn['height']<32400) { //32400
+                    } elseif ($height-$mn['height']<32400*$blocktime_factor) { //32400
                         _log("The masternode start height is less than 32400 blocks! $height - $mn[height]", 3);
                         return false;
                     }
                 } elseif ($x['version']==104) {
-                    //only once per month (every 10800 blocks)
-                    $res=$db->single("SELECT COUNT(1) FROM transactions WHERE public_key=:public_key AND version=104 AND height>:height", [':public_key'=>$x['public_key'], ":height"=>$height-10800]);
+                    //only once per month (every 43200 blocks)
+                    $res=$db->single("SELECT COUNT(1) FROM transactions WHERE public_key=:public_key AND version=104 AND height>:height", [':public_key'=>$x['public_key'], ":height"=>$height-43200]);
                     if ($res!=0) {
                         return false;
                     }
-                } elseif ($x['version']==105) {
+                
                     // already using this ip
                     if ($message==$mn['ip']) {
                         return false;
@@ -744,15 +761,22 @@ class Transaction
                     if ($existing!=0) {
                         return false;
                     }
+                
+                } elseif ($x['version']==105) {
+                    // masternode voting key can only be set once
+                    if(!empty($mn['vote_key'])){
+                        return false;
+                    }
                 }        
+                
                 // masternode votes
                 elseif ($x['version']==106) {
                     // value always 0
                     if ($x['val']!=0) {
                         return false;
                     }
-                    // one vote to each mn per 10800 blocks
-                    $res=$db->single("SELECT COUNT(1) FROM transactions WHERE dst=:dst AND version=106 AND public_key=:id AND height>:height", [':dst'=>$x['dst'], ":id"=>$x['public_key'], ":height"=>$height-10800]);
+                    // one vote to each mn per 43200 blocks
+                    $res=$db->single("SELECT COUNT(1) FROM transactions WHERE dst=:dst AND version=106 AND public_key=:id AND height>:height", [':dst'=>$x['dst'], ":id"=>$x['public_key'], ":height"=>$height-43200]);
                     if ($res>0) {
                         return false;
                     }
@@ -761,16 +785,27 @@ class Transaction
                 elseif ($x['version']==107) {
                     // value always 0
                     if ($x['val']!=0) {
+                        _log("The value should be 0 for this transaction type - $x[val]",3);
                         return false;
                     }
         
-                    // one vote to each mn per 32400 blocks
-                    $res=$db->single("SELECT COUNT(1) FROM transactions WHERE message=:message AND version=107 AND public_key=:id AND height>:height", [':message'=>$x['message'], ":id"=>$x['public_key'], ":height"=>$height-32400]);
+                    // one vote to each mn per 129600 blocks
+                    $res=$db->single("SELECT COUNT(1) FROM transactions WHERE message=:message AND version=107 AND public_key=:id AND height>:height", [':message'=>$x['message'], ":id"=>$x['public_key'], ":height"=>$height-129600]);
                     if ($res>0) {
+                        _log("There is already a vote in the last 129600 blocks",3);
                         return false;
                     }
                 }
             }
+        }
+
+        // no asset transactions prior to 216000
+        if($x['version']>=50&&$x['version']<=55&&$height<=216000){
+            return false;
+        }
+        // no masternode voting prior to 216000
+        if(($x['version']==106||$x['version']==107)&&$height<=216000){
+            return false;
         }
         // assets
         if ($x['version']==50) {
@@ -862,7 +897,7 @@ class Transaction
             }
         }
         // make sure the dividend only function is not bypassed after height X
-        if (($x['version']==1||$x['version']==2)&&$height>11111) {
+        if (($x['version']==1||$x['version']==2)&&$height>216000) {
             $check=$db->single("SELECT COUNT(1) FROM assets WHERE id=:id AND dividend_only=1", [":id"=>$src]);
             if ($check==1) {
                 _log("This asset wallet cannot send funds directly", 3);

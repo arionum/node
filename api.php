@@ -487,7 +487,7 @@ if ($q == "getAddress") {
     if ($fee > 10 && $current['height'] > 10800) {
         $fee = 10; //10800
     }
-    if ($val < 0.00000001) {
+    if ($val < 0) {
         api_err("Invalid value");
     }
 

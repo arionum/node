@@ -165,11 +165,11 @@ if ($dbversion == 8) {
   ADD KEY `height` (`height`);");
     $dbversion++;
 }
-if ($dbversion = 9) {
+if ($dbversion == 9) {
     //dev only
     $dbversion++;
 }
-if ($dbversion = 10) {
+if ($dbversion == 10) {
     //assets system
     $db->run("
   CREATE TABLE `assets` (
@@ -220,22 +220,44 @@ if ($dbversion = 10) {
     $dbversion++;
 }
 
-if ($dbversion = 11) {
+if ($dbversion == 11) { 
     $db->run("ALTER TABLE `transactions` ADD INDEX(`version`); ");
     $db->run("ALTER TABLE `transactions` ADD INDEX(`message`); ");
     $db->run("
     CREATE TABLE `logs` (
       `id` int(11) NOT NULL,
-      `transaction` varbinary(128) NOT NULL,
+      `transaction` varbinary(128) NULL DEFAULT NULL,
+      `block` VARBINARY(128) NULL DEFAULT NULL,
       `json` text DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
     $db->run("ALTER TABLE `logs`
     ADD PRIMARY KEY (`id`),
-    ADD KEY `transaction` (`transaction`);");
+    ADD INDEX(`transaction`),
+    ADD INDEX(`block`);");
     $db->run("ALTER TABLE `logs` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;");
 
-    $db->run("ALTER TABLE `masternode` ADD `vote_key` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL AFTER `status`; ");
+    $db->run("ALTER TABLE `masternode` ADD `vote_key` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL AFTER `status`, ADD INDEX(`vote_key`);");
+    $db->run("ALTER TABLE `masternode` ADD `cold_last_won` INT NOT NULL DEFAULT '0' AFTER `vote_key`, ADD INDEX(`cold_last_won`);  ");
+    $db->run("ALTER TABLE `masternode` ADD `voted` TINYINT NOT NULL DEFAULT '0' AFTER `cold_last_won`, ADD INDEX (`voted`); ");
+
+
+
+    $db->run("CREATE TABLE `votes` (
+      `id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `nfo` varchar(64) NOT NULL,
+      `val` int(11) NOT NULL DEFAULT 0
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
     
+  
+    
+    $db->run("INSERT INTO `votes` (`id`, `nfo`, `val`) VALUES
+    ('coldstacking', 'Enable cold stacking for inactive masternodes', 1),
+    ('emission30', 'Emission reduction by 30 percent', 1),
+    ('endless10reward', 'Minimum reward to be 10 aro forever', 0),
+    ('masternodereward50', 'Masternode reward to be 50 percent of the block reward', 1);");
+    
+    $db->run("ALTER TABLE `votes`  ADD PRIMARY KEY (`id`);");
+
     $dbversion++;
 }
 
