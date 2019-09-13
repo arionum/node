@@ -647,6 +647,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
 
                 $resyncing=true;
             }
+
             // needs to be redone due to the assets
             // if ($resyncing==true) {
             //     _log("Resyncing accounts");
@@ -682,6 +683,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
             //     $db->run("DELETE FROM masternode WHERE height>:h", [":h"=>$current['height']]);
             //     $db->exec("UNLOCK TABLES");
             // }
+
         }
     }
 
