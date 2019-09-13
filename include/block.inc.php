@@ -359,7 +359,7 @@ class Block
             } else {
                 _log("Counting AroDev blockchain votes", 3);
                 // If less than 50% of the mns have voting key, AroDev's votes are used
-                $r=$db->run("SELECT message FROM transactions WHERE version=107 AND height>:height AND public_key=:pub", [':height'=>$height-129600*, ":pub"=>$arodev]);
+                $r=$db->run("SELECT message FROM transactions WHERE version=107 AND height>:height AND public_key=:pub", [':height'=>$height-129600, ":pub"=>$arodev]);
                 foreach ($r as $x) {
                     $voted[]=san($x['message']);
                 }
