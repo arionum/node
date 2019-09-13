@@ -804,7 +804,7 @@ class Transaction
             return false;
         }
         // no masternode voting prior to 216000
-        if(($x['version']==106||$x['version']==107)&&$height<=216000){
+        if(($x['version']==106||$x['version']==107||$x['version']==105||$x['version']==104)&&$height<=216000){
             return false;
         }
         // assets

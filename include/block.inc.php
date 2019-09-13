@@ -277,7 +277,7 @@ class Block
             $res=$this->asset_market_orders($height, $hash, $public_key, $date, $signature);
         }
 
-        if ($height>216000 && $height%10000==0) {
+        if ($height>216000 && $height%43200==0) {
             $res=$this->masternode_votes($public_key, $height, $hash);
         }
         
@@ -301,7 +301,7 @@ class Block
         $arodev='PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCvcUb8x4p38GFbZWaJKcncEWqUbe7YJtrDXomwn7DtDYuyYnN2j6s4nQxP1u9BiwCA8U4TjtC9Z21j3R3STLJSFyL';
 
         // masternode votes
-        if ($height%10000==0) {
+        if ($height%43200==0) {
             _log("Checking masternode votes", 3);
             $blacklist=[];
             $total_mns=$db->single("SELECT COUNT(1) FROM masternode");
@@ -310,7 +310,7 @@ class Block
             // only if at least 50% of the masternodes have voting keys
             if ($total_mns_with_key/$total_mns>0.50) {
                 _log("Counting the votes from other masternodes", 3);
-                $r=$db->run("SELECT message, count(message) as c FROM transactions WHERE version=106 AND height>:height group by message", [':height'=>$height-10000]);
+                $r=$db->run("SELECT message, count(message) as c FROM transactions WHERE version=106 AND height>:height group by message", [':height'=>$height-43200]);
                 foreach ($r as $x) {
                     if ($x['c']>$total_mns_with_key/1.5) {
                         $blacklist[]=san($x['message']);
@@ -319,7 +319,7 @@ class Block
             } else {
                 // If less than 50% of the mns have voting key, AroDev's votes are used
                 _log("Counting AroDev votes", 3);
-                $r=$db->run("SELECT message FROM transactions WHERE version=106 AND height>:height AND public_key=:pub", [':height'=>$height-10000, ":pub"=>$arodev]);
+                $r=$db->run("SELECT message FROM transactions WHERE version=106 AND height>:height AND public_key=:pub", [':height'=>$height-43200, ":pub"=>$arodev]);
                 foreach ($r as $x) {
                     $blacklist[]=san($x['message']);
                 }
@@ -345,12 +345,12 @@ class Block
 
         // blockchain votes
         $voted=[];
-        if ($height%100000==0) {
+        if ($height%129600==0) {
 
              // only if at least 50% of the masternodes have voting keys
             if ($total_mns_with_key/$total_mns>0.50) {
                 _log("Counting masternode blockchain votes", 3);
-                $r=$db->run("SELECT message, count(message) as c FROM transactions WHERE version=107 AND height>:height group by message", [':height'=>$height-100000]);
+                $r=$db->run("SELECT message, count(message) as c FROM transactions WHERE version=107 AND height>:height group by message", [':height'=>$height-129600]);
                 foreach ($r as $x) {
                     if ($x['c']>$total_mns_with_key/1.5) {
                         $voted[]=san($x['message']);
@@ -359,7 +359,7 @@ class Block
             } else {
                 _log("Counting AroDev blockchain votes", 3);
                 // If less than 50% of the mns have voting key, AroDev's votes are used
-                $r=$db->run("SELECT message FROM transactions WHERE version=107 AND height>:height AND public_key=:pub", [':height'=>$height-100000, ":pub"=>$arodev]);
+                $r=$db->run("SELECT message FROM transactions WHERE version=107 AND height>:height AND public_key=:pub", [':height'=>$height-129600*, ":pub"=>$arodev]);
                 foreach ($r as $x) {
                     $voted[]=san($x['message']);
                 }
