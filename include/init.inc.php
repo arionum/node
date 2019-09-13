@@ -1,13 +1,13 @@
 <?php
 // ARO version
-define("VERSION", "0.4.5");
-// Amsterdam timezone by default, should probably be moved to config
+define("VERSION", "1.0.0-alpha.1");
+// UTC timezone by default
 date_default_timezone_set("UTC");
 
-//error_reporting(E_ALL & ~E_NOTICE);
+// error_reporting(E_ALL & ~E_NOTICE);
 error_reporting(0);
-ini_set('display_errors', "off");
-
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0); 
 // not accessible directly
 if (php_sapi_name() !== 'cli' && substr_count($_SERVER['PHP_SELF'], "/") > 1) {
     die("This application should only be run in the main directory /");

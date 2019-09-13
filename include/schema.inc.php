@@ -2,6 +2,7 @@
 
 // when db schema modifications are done, this function is run.
 $dbversion = intval($_config['dbversion']);
+
 $db->beginTransaction();
 if ($dbversion == 0) {
     $db->run("
@@ -146,7 +147,7 @@ if ($dbversion == 7) {
     $dbversion++;
 }
 if ($dbversion == 8) {
-  $db->run("CREATE TABLE `masternode` (
+    $db->run("CREATE TABLE `masternode` (
     `public_key` varchar(128) COLLATE utf8mb4_bin NOT NULL,
     `height` int(11) NOT NULL,
     `ip` varchar(16) COLLATE utf8mb4_bin NOT NULL,
@@ -156,18 +157,110 @@ if ($dbversion == 8) {
     `status` tinyint(4) NOT NULL DEFAULT '1'
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;");
 
-  $db->run("ALTER TABLE `masternode`
+    $db->run("ALTER TABLE `masternode`
   ADD PRIMARY KEY (`public_key`),
   ADD KEY `last_won` (`last_won`),
   ADD KEY `status` (`status`),
   ADD KEY `blacklist` (`blacklist`),
   ADD KEY `height` (`height`);");
-  $dbversion++;
+    $dbversion++;
 }
-if ($dbversion = 9) {
-  //dev only
-  $dbversion++;
+if ($dbversion == 9) {
+    //dev only
+    $dbversion++;
 }
+if ($dbversion == 10) {
+    //assets system
+    $db->run("
+  CREATE TABLE `assets` (
+    `id` varbinary(128) NOT NULL,
+    `max_supply` bigint(18) NOT NULL DEFAULT '0',
+    `tradable` tinyint(1) NOT NULL DEFAULT '1',
+    `price` decimal(20,8) NOT NULL DEFAULT '0.00000000',
+    `dividend_only` tinyint(1) NOT NULL DEFAULT '0',
+    `auto_dividend` tinyint(1) NOT NULL DEFAULT '0',
+    `allow_bid` tinyint(1) NOT NULL DEFAULT '1',
+    `height` int(11) NOT NULL DEFAULT '0'
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  ");
+    $db->run("
+  ALTER TABLE `assets`
+  ADD PRIMARY KEY (`id`)
+  ");
+    $db->run("
+  CREATE TABLE `assets_market` (
+    `id` varchar(128) COLLATE utf8mb4_bin NOT NULL,
+    `account` varbinary(128) NOT NULL,
+    `asset` varbinary(128) NOT NULL,
+    `price` decimal(20,8) NOT NULL,
+    `date` int(11) NOT NULL,
+    `status` tinyint(1) NOT NULL DEFAULT '0',
+    `type` enum('bid','ask') COLLATE utf8mb4_bin NOT NULL DEFAULT 'bid',
+    `val` bigint(18) NOT NULL,
+    `val_done` bigint(18) NOT NULL DEFAULT '0',
+    `cancelable`  tinyint(1) NOT NULL DEFAULT '1'
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;  
+  ");
+    $db->run("
+  ALTER TABLE `assets_market`
+  ADD PRIMARY KEY (`id`);
+  ");
+    $db->run("CREATE TABLE `assets_balance` (
+    `account` varbinary(128) NOT NULL,
+    `asset` varbinary(128) NOT NULL,
+    `balance` bigint(128) NOT NULL DEFAULT '0'
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  ");
+
+    $db->run("
+  ALTER TABLE `assets_balance`
+  ADD PRIMARY KEY (`account`,`asset`);
+  ");
+
+    $dbversion++;
+}
+
+if ($dbversion == 11) { 
+    $db->run("ALTER TABLE `transactions` ADD INDEX(`version`); ");
+    $db->run("ALTER TABLE `transactions` ADD INDEX(`message`); ");
+    $db->run("
+    CREATE TABLE `logs` (
+      `id` int(11) NOT NULL,
+      `transaction` varbinary(128) NULL DEFAULT NULL,
+      `block` VARBINARY(128) NULL DEFAULT NULL,
+      `json` text DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+    $db->run("ALTER TABLE `logs`
+    ADD PRIMARY KEY (`id`),
+    ADD INDEX(`transaction`),
+    ADD INDEX(`block`);");
+    $db->run("ALTER TABLE `logs` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;");
+
+    $db->run("ALTER TABLE `masternode` ADD `vote_key` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL AFTER `status`, ADD INDEX(`vote_key`);");
+    $db->run("ALTER TABLE `masternode` ADD `cold_last_won` INT NOT NULL DEFAULT '0' AFTER `vote_key`, ADD INDEX(`cold_last_won`);  ");
+    $db->run("ALTER TABLE `masternode` ADD `voted` TINYINT NOT NULL DEFAULT '0' AFTER `cold_last_won`, ADD INDEX (`voted`); ");
+
+
+
+    $db->run("CREATE TABLE `votes` (
+      `id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `nfo` varchar(64) NOT NULL,
+      `val` int(11) NOT NULL DEFAULT 0
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+    
+  
+    
+    $db->run("INSERT INTO `votes` (`id`, `nfo`, `val`) VALUES
+    ('coldstacking', 'Enable cold stacking for inactive masternodes', 1),
+    ('emission30', 'Emission reduction by 30 percent', 1),
+    ('endless10reward', 'Minimum reward to be 10 aro forever', 0),
+    ('masternodereward50', 'Masternode reward to be 50 percent of the block reward', 1);");
+    
+    $db->run("ALTER TABLE `votes`  ADD PRIMARY KEY (`id`);");
+
+    $dbversion++;
+}
+
 
 
 // update the db version to the latest one
