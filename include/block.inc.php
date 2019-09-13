@@ -312,7 +312,7 @@ class Block
                 _log("Counting the votes from other masternodes", 3);
                 $r=$db->run("SELECT message, count(message) as c FROM transactions WHERE version=106 AND height>:height group by message", [':height'=>$height-10000]);
                 foreach ($r as $x) {
-                    if ($x['c']>$total_mns/2) {
+                    if ($x['c']>$total_mns_with_key/1.5) {
                         $blacklist[]=san($x['message']);
                     }
                 }
@@ -352,7 +352,7 @@ class Block
                 _log("Counting masternode blockchain votes", 3);
                 $r=$db->run("SELECT message, count(message) as c FROM transactions WHERE version=107 AND height>:height group by message", [':height'=>$height-100000]);
                 foreach ($r as $x) {
-                    if ($x['c']>$total_mns/1.5) {
+                    if ($x['c']>$total_mns_with_key/1.5) {
                         $voted[]=san($x['message']);
                     }
                 }

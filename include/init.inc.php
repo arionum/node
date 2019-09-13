@@ -1,6 +1,6 @@
 <?php
 // ARO version
-define("VERSION", "0.5.0a");
+define("VERSION", "1.0.0-alpha.1");
 // UTC timezone by default
 date_default_timezone_set("UTC");
 
