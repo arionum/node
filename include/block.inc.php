@@ -299,8 +299,6 @@ class Block
         global $db;
 
         $arodev='PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSCvcUb8x4p38GFbZWaJKcncEWqUbe7YJtrDXomwn7DtDYuyYnN2j6s4nQxP1u9BiwCA8U4TjtC9Z21j3R3STLJSFyL';
-        //testnet
-        $arodev='PZ8Tyr4Nx8MHsRAGMpZmZ6TWY63dXWSD1AyyUtViMXaRS1cLfRRwBgUYzDgqhHcssWSutK966KwBKTPJNpNxcb8snJomuL6jdNd9x53udEzHcq3ooL3MhYtB'; 
 
         // masternode votes
         if ($height%10000==0) {
