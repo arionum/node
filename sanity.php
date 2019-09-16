@@ -95,61 +95,23 @@ $current = $block->current();
 // bootstrapping the initial sync
 if ($current['height']==1) {
     echo "Bootstrapping!\n";
-    $last=file_get_contents("http://dumps.arionum.com/last");
-    $last=intval($last);
-    $failed_sync=false;
-    for ($i=1000;$i<=$last;$i=$i+1000) {
-        echo "Download file $i\n";
-        $res=trim(file_get_contents("http://dumps.arionum.com/aro.db.$i"));
-        if ($res===false) {
-            echo "Could not download the bootstrap file $i. Syncing the old fashioned way.\n";
-            break;
-        }
-        $data=json_decode($res, true);
-        
-        if ($data===false||is_null($data)) {
-            echo "Could not parse the bootstrap file $i. Syncing the old fashioned way.\n";
-            echo json_last_error_msg();
-            break;
-        }
-        foreach ($data as $x) {
-            if (count($x['data'])>0) {
-                $transactions=[];
-                
-                foreach ($x['data'] as $d) {
-                    $trans = [
-                            "id"         => $d[0],
-                            "dst"        => $d[1],
-                            "val"        => $d[2],
-                            "fee"        => $d[3],
-                            "signature"  => $d[4],
-                            "message"    => $d[5],
-                            "version"    => $d[6],
-                            "date"       => $d[7],
-                            "public_key" => $d[8],
-                        ];
-                    ksort($trans);
-                    $transactions[$d[0]] = $trans;
-                }
-                ksort($transactions);
-                $x['data']=$transactions;
-            }
-            
-        
-            echo "-> Adding block $x[height]\n";
-
-            $res=$block->add($x['height'], $x['public_key'], $x['nonce'], $x['data'], $x['date'], $x['signature'], $x['difficulty'], $x['reward_signature'], $x['argon'], true);
-            if (!$res) {
-                echo "Error: Adding the block failed. Syncing the old way.\n";
-                $failed_sync=true;
-                break;
-            }
-        }
-        if ($failed_sync) {
-            break;
-        }
+    $db_name=substr($_config['db_connect'], strrpos($_config['db_connect'], "dbname=")+7);
+    echo "DB name: $db_name\n";
+    echo "Downloading the blockchain dump from arionum.info\n";
+    $arofile=__DIR__ . '/tmp/aro.sql';
+    if (file_exists("/usr/bin/curl")) {
+        system("/usr/bin/curl -o $arofile 'https://arionum.info/dump/aro.sql'", $ret);
+    } elseif (file_exists("/usr/bin/wget")) {
+        system("/usr/bin/wget -O $arofile 'https://arionum.info/dump/aro.sql'", $ret);
+    } else {
+        die("/usr/bin/curl and /usr/bin/wget not installed or inaccessible. Please install either of them.");
     }
     
+
+    echo "Importing the blockchain dump\n";
+    system("mysql -u ".escapeshellarg($_config['db_user'])." -p".escapeshellarg($_config['db_pass'])." ".escapeshellarg($db_name). " < ".$arofile);
+    echo "Bootstrapping completed. Sleeping for 3 min. \n";
+    sleep(180);
     $current = $block->current();
 }
 // the microsanity process is an anti-fork measure that will determine the best blockchain to choose for the last block
@@ -351,7 +313,7 @@ foreach ($r as $x) {
             $db->run(
                 "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
                 [":id" => $x['id']]
-        );
+            );
             continue;
         }
         foreach ($data as $peer) {
@@ -383,7 +345,7 @@ foreach ($r as $x) {
             if (!$db->single(
                 "SELECT COUNT(1) FROM peers WHERE ip=:ip or hostname=:hostname",
                 [":ip" => $peer['ip'], ":hostname" => $peer['hostname']]
-        )) {
+            )) {
                 $i++;
                 // check a max_test_peers number of peers from each peer
                 if ($i > $_config['max_test_peers']) {
@@ -683,7 +645,6 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
             //     $db->run("DELETE FROM masternode WHERE height>:h", [":h"=>$current['height']]);
             //     $db->exec("UNLOCK TABLES");
             // }
-
         }
     }
 
@@ -834,18 +795,18 @@ if (rand(0, 10)==1) {
     }
 }
 
-if($_config['masternode']==true&&!empty($_config['masternode_public_key'])&&!empty($_config['masternode_voting_public_key'])&&!empty($_config['masternode_voting_private_key'])){
-echo "Masternode votes\n";
+if ($_config['masternode']==true&&!empty($_config['masternode_public_key'])&&!empty($_config['masternode_voting_public_key'])&&!empty($_config['masternode_voting_private_key'])) {
+    echo "Masternode votes\n";
     $r=$db->run("SELECT * FROM masternode WHERE status=1 ORDER by RAND() LIMIT 3");
-    foreach($r as $x){
+    foreach ($r as $x) {
         $blacklist=0;
         $x['ip']=san_ip($x['ip']);
         echo "Testing masternode: $x[ip]\n";
         $f=file_get_contents("http://$x[ip]/api.php?q=currentBlock");
-        if($f){
-            $res=json_decode($f,true);
+        if ($f) {
+            $res=json_decode($f, true);
             $res=$res['data'];
-            if($res['height']<$current['height']-50){
+            if ($res['height']<$current['height']-50) {
                 $blacklist=1;
             }
             echo "Masternode Height: ".$res['height']."\n";
@@ -854,7 +815,7 @@ echo "Masternode votes\n";
             $blacklist=1;
         }
 
-        if($blacklist){
+        if ($blacklist) {
             echo "Blacklisting masternode $x[public_key]\n";
             $val='0.00000000';
             $fee='0.00000001';
@@ -893,12 +854,8 @@ echo "Masternode votes\n";
             $hash=escapeshellarg(san($hash));
             system("php propagate.php transaction $hash > /dev/null 2>&1  &");
             echo "Blacklist Hash: $hash\n";
-
-
         }
     }
-
-
 }
 
 
