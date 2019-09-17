@@ -96,7 +96,11 @@ $current = $block->current();
 if ($current['height']==1) {
     echo "Bootstrapping!\n";
     $db_name=substr($_config['db_connect'], strrpos($_config['db_connect'], "dbname=")+7);
+    $db_host=substr($_config['db_connect'], strpos($_config['db_connect'], ":host=")+6);
+    $db_host=substr($db_host, 0, strpos($db_host, ";"));
+
     echo "DB name: $db_name\n";
+    echo "DB host: $db_host\n";
     echo "Downloading the blockchain dump from arionum.info\n";
     $arofile=__DIR__ . '/tmp/aro.sql';
     if (file_exists("/usr/bin/curl")) {
@@ -109,9 +113,21 @@ if ($current['height']==1) {
     
 
     echo "Importing the blockchain dump\n";
-    system("mysql -u ".escapeshellarg($_config['db_user'])." -p".escapeshellarg($_config['db_pass'])." ".escapeshellarg($db_name). " < ".$arofile);
-    echo "Bootstrapping completed. Sleeping for 3 min. \n";
-    sleep(180);
+    system("mysql -h ".escapeshellarg($db_host)." -u ".escapeshellarg($_config['db_user'])." -p".escapeshellarg($_config['db_pass'])." ".escapeshellarg($db_name). " < ".$arofile);
+    echo "Bootstrapping completed. Waiting 2mins for the tables to be unlocked.\n";
+    
+    while (1) {
+        sleep(120);
+  
+        $res=$db->run("SHOW OPEN TABLES WHERE In_use > 0");
+        if (count($res==0)) {
+            break;
+        }
+        echo "Tables still locked. Sleeping for another 2 min. \n";
+    }
+
+   
+
     $current = $block->current();
 }
 // the microsanity process is an anti-fork measure that will determine the best blockchain to choose for the last block
