@@ -112,17 +112,20 @@ class Block
         }
         $cold_winner=false;
         $cold_reward=0;
+        $cold_last_won=0;
         if ($height>216000) {
             if ($votes['coldstacking']==1) {
                 $cold_reward=round($mn_reward*0.2, 8);
                 $mn_reward=$mn_reward-$cold_reward;
                 $mn_reward=number_format($mn_reward, 8, ".", "");
                 $cold_reward=number_format($cold_reward, 8, ".", "");
-                $cold_winner=$db->single(
-                        "SELECT public_key FROM masternode WHERE height<:start ORDER by cold_last_won ASC, public_key ASC LIMIT 1",
-                        [":current"=>$height, ":start"=>$height-360]
-                    );
-                _log("Cold MN Winner: $mn_winner", 2);
+                $cw=$db->row(
+                    "SELECT public_key, cold_last_won  FROM masternode WHERE height<:start ORDER by cold_last_won ASC, public_key ASC LIMIT 1",
+                    [":start"=>$height-360]
+                );
+                $cold_winner=$cw['public_key'];
+                $cold_last_won=$cw['cold_last_won'];
+                _log("Cold MN Winner: $cold_winner [$cold_last_won]", 2);
             }
         }
 
@@ -190,6 +193,7 @@ class Block
         //masternode rewards
         if ($mn_winner!==false&&$height>=80458&&$mn_reward>0) {
             //cold stacking rewards
+            
             if ($cold_winner!==false&&$height>216000&&$cold_reward>0) {
                 $db->run("UPDATE accounts SET balance=balance+:bal WHERE public_key=:pub", [":pub"=>$cold_winner, ":bal"=>$cold_reward]);
             
@@ -207,15 +211,22 @@ class Block
             ":message"    => 'masternode-cold',
         ];
                 $res = $db->run(
-                "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
-                $bind
-        );
+                    "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
+                    $bind
+                );
+
                 if ($res != 1) {
                     // rollback and exit if it fails
                     _log("Masternode Cold reward DB insert failed");
                     $db->rollback();
                     $db->exec("UNLOCK TABLES");
                     return false;
+                }
+
+                if ($height>216070) {
+                    $db->run("UPDATE masternode SET cold_last_won=:height WHERE public_key=:pub", [':pub'=>$cold_winner, ":height"=>$height]);
+                    
+                    $this->add_log($hash, ["table"=>"masternode", "key"=>"public_key","id"=>$cold_winner, "vals"=>['cold_last_won'=>$cold_last_won]]);
                 }
             }
 
@@ -237,7 +248,7 @@ class Block
             $res = $db->run(
                 "INSERT into transactions SET id=:id, public_key=:public_key, block=:block,  height=:height, dst=:dst, val=:val, fee=:fee, signature=:signature, version=:version, message=:message, `date`=:date",
                 $bind
-        );
+            );
             if ($res != 1) {
                 // rollback and exit if it fails
                 _log("Masternode reward DB insert failed");
@@ -283,10 +294,10 @@ class Block
         
         // if any fails, rollback
         if ($res == false) {
-            _log("Rollback block",3);
+            _log("Rollback block", 3);
             $db->rollback();
         } else {
-            _log("Commiting block",3);
+            _log("Commiting block", 3);
             $db->commit();
         }
         // relese the locking as everything is finished
@@ -593,7 +604,6 @@ class Block
         $res=$db->run(
             "INSERT into transactions SET id=:id, block=:block, height=:height, dst=:dst, val=0, fee=0, signature=:sig, version=111, message=:msg, date=:date, public_key=:public_key",
             [":id"=>$id, ":block"=>$hash, ":height"=>$height, ":dst"=>$hash, ":sig"=>$hash, ":msg"=>$msg, ":date"=>time(), ":public_key"=>$public_key]
-        
         );
         if ($res!=1) {
             return 5;
@@ -1216,7 +1226,7 @@ class Block
                 if ($x['version']>=100&&$x['version']<110&&$x['version']!=106&&$x['version']!=107) {
                     $mns[] = $x['public_key'];
                 }
-                if($x['version']==106||$x['version']==107){
+                if ($x['version']==106||$x['version']==107) {
                     $mns[]=$x['public_key'].$x['message'];
                 }
 
@@ -1242,7 +1252,7 @@ class Block
                 $res = $db->single(
                     "SELECT COUNT(1) FROM accounts WHERE id=:id AND balance>=:balance",
                     [":id" => $id, ":balance" => $bal]
-            );
+                );
                 if ($res == 0) {
                     _log("Not enough balance for transaction - $id", 3);
                     return false; // not enough balance for the transactions
