@@ -374,6 +374,8 @@ foreach ($r as $x) {
                 if ($test !== false) {
                     $total_peers++;
                     echo "Peered with: $peer[hostname]\n";
+                    // a single new peer per sanity
+                    $_config['get_more_peers']==false;
                 }
             }
         }
@@ -382,6 +384,13 @@ foreach ($r as $x) {
     // get the current block and check it's blockchain
     $data = peer_post($url."currentBlock", [], 5);
     if ($data === false) {
+            _log("Peer $x[hostname] unresponsive");
+            // if the peer is unresponsive, mark it as failed and blacklist it for a while
+            $db->run(
+                "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
+                [":id" => $x['id']]
+            );
+         
         continue;
     }
     // peer was responsive, mark it as good
@@ -484,14 +493,14 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
             //if we're not on the same blockchain and also it's not the most common, verify all the blocks on on this blockchain starting at current-30 until current
             $invalid = false;
             $last_good = $current['height'];
-            for ($i = $current['height'] - 30; $i < $current['height']; $i++) {
+            for ($i = $current['height'] - 100; $i < $current['height']; $i++) {
                 $data = peer_post($url."getBlock", ["height" => $i]);
                 if ($data === false) {
                     $invalid = true;
                     break;
                 }
                 $ext = $block->get($i);
-                if ($i == $current['height'] - 30 && $ext['id'] != $data['id']) {
+                if ($i == $current['height'] - 100 && $ext['id'] != $data['id']) {
                     $invalid = true;
                     break;
                 }
@@ -617,7 +626,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                     $to_remove=intval($argv[2]);
                 }
                 _log("Removing $to_remove blocks, the blockchain is stale.");
-                $block->pop(to_remove);
+                $block->pop($to_remove);
                 $resyncing=true;
             } elseif ($current['date']<time()-(3600*24)) {
                 _log("Removing 200 blocks, the blockchain is stale.");
