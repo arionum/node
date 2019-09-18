@@ -375,7 +375,7 @@ foreach ($r as $x) {
                     $total_peers++;
                     echo "Peered with: $peer[hostname]\n";
                     // a single new peer per sanity
-                    $_config['get_more_peers']==false;
+                    $_config['get_more_peers']=false;
                 }
             }
         }
