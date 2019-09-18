@@ -114,7 +114,7 @@ $_config['use_official_blacklist'] = true;
 */
 
 // Recheck the last blocks on sanity
-$_config['sanity_recheck_blocks'] = 10;
+$_config['sanity_recheck_blocks'] = 30;
 
 // The interval to run the sanity in seconds
 $_config['sanity_interval'] = 900;
