@@ -822,7 +822,7 @@ if ($_config['masternode']==true&&!empty($_config['masternode_public_key'])&&!em
         if ($f) {
             $res=json_decode($f, true);
             $res=$res['data'];
-            if ($res['height']<$current['height']-360) {
+            if ($res['height']<$current['height']-360) { 
                 $blacklist=1;
             }
             echo "Masternode Height: ".$res['height']."\n";
