@@ -48,7 +48,7 @@ if (file_exists(SANITY_LOCK_PATH)) {
     $pid_time = filemtime(SANITY_LOCK_PATH);
 
     // If the process died, restart after 10 times the sanity interval
-    if (time() - $pid_time > ($_config['sanity_interval'] ?? 900 * 10)) {
+    if (time() - $pid_time > ($_config['sanity_interval'] * 20 ?? 900 * 20)) {
         @unlink(SANITY_LOCK_PATH);
     }
 
@@ -620,14 +620,21 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
     if ($block_parse_failed==true||$argv[1]=="resync") {
         $last_resync=$db->single("SELECT val FROM config WHERE cfg='last_resync'");
         if ($last_resync<time()-(3600*24)||$argv[1]=="resync") {
-            if ($current['date']<time()-(3600*72)||$argv[1]=="resync") {
-                $to_remove=3000;
-                if (intval($argv[2])>0) {
-                    $to_remove=intval($argv[2]);
+            if ((($current['date']<time()-(3600*72))&&$_config['auto_resync'])!==false||$argv[1]=="resync") {
+                $db->run("SET foreign_key_checks=0;");
+                $tables = ["accounts", "transactions", "mempool", "masternode","blocks"];
+                foreach ($tables as $table) {
+                    $db->run("TRUNCATE TABLE {$table}");
                 }
-                _log("Removing $to_remove blocks, the blockchain is stale.");
-                $block->pop($to_remove);
+                $db->run("SET foreign_key_checks=1;");
+                
                 $resyncing=true;
+                $db->run("UPDATE config SET val=0 WHERE cfg='sanity_sync'", [":time" => $t]);
+                
+                _log("Exiting sanity, next sanity will resync from scratch.");
+
+                @unlink(SANITY_LOCK_PATH);
+                exit;
             } elseif ($current['date']<time()-(3600*24)) {
                 _log("Removing 200 blocks, the blockchain is stale.");
                 $block->pop(200);
@@ -746,19 +753,6 @@ foreach ($r as $x) {
     }
 }
 
-//clean tmp files
-_log("Cleaning tmp files");
-$f = scandir("tmp/");
-$time = time();
-foreach ($f as $x) {
-    if (strlen($x) < 5 && substr($x, 0, 1) == ".") {
-        continue;
-    }
-    $pid_time = filemtime("tmp/$x");
-    if ($time - $pid_time > 7200) {
-        @unlink("tmp/$x");
-    }
-}
 
 
 //recheck the last blocks
@@ -831,7 +825,7 @@ if ($_config['masternode']==true&&!empty($_config['masternode_public_key'])&&!em
         if ($f) {
             $res=json_decode($f, true);
             $res=$res['data'];
-            if ($res['height']<$current['height']-360) { 
+            if ($res['height']<$current['height']-10080) { 
                 $blacklist=1;
             }
             echo "Masternode Height: ".$res['height']."\n";
@@ -880,6 +874,22 @@ if ($_config['masternode']==true&&!empty($_config['masternode_public_key'])&&!em
             system("php propagate.php transaction $hash > /dev/null 2>&1  &");
             echo "Blacklist Hash: $hash\n";
         }
+    }
+}
+
+
+
+//clean tmp files
+_log("Cleaning tmp files");
+$f = scandir("tmp/");
+$time = time();
+foreach ($f as $x) {
+    if (strlen($x) < 5 && substr($x, 0, 1) == ".") {
+        continue;
+    }
+    $pid_time = filemtime("tmp/$x");
+    if ($time - $pid_time > 7200) {
+        @unlink("tmp/$x");
     }
 }
 

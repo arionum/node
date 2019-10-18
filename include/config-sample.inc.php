@@ -128,6 +128,10 @@ $_config['sanity_rebroadcast_locals'] = true;
 // Get more peers?
 $_config['get_more_peers'] = true;
 
+// Allow automated resyncs if the node is stuck. Enabled by default
+
+$_config['auto_resync'] = true;
+
 /*
 |--------------------------------------------------------------------------
 | Logging Configuration
