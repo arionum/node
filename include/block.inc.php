@@ -96,9 +96,13 @@ class Block
 
         if ($height>=80458) {
             //reward the masternode
-
+            // do not reward blacklisted mns after 320000
+            $check_mn_votes="";
+            if ($height>320000) {
+                $check_mn_votes="and voted=0";
+            }
             $mn_winner=$db->single(
-                "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 1",
+                "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start $check_mn_votes ORDER by last_won ASC, public_key ASC LIMIT 1",
                 [":current"=>$height, ":start"=>$height-360]
             );
             _log("MN Winner: $mn_winner", 2);
@@ -921,8 +925,14 @@ class Block
         if ($height>=80458) {
             //reward the masternode
             
+            // do not reward blacklisted mns after 320000
+            $check_mn_votes="";
+            if ($height>320000) {
+                $check_mn_votes="and voted=0";
+            }
+
             $mn_winner=$db->single(
-                "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start ORDER by last_won ASC, public_key ASC LIMIT 1",
+                "SELECT public_key FROM masternode WHERE status=1 AND blacklist<:current AND height<:start $check_mn_votes ORDER by last_won ASC, public_key ASC LIMIT 1",
                 [":current"=>$height, ":start"=>$height-360]
             );
             _log("MN Winner: $mn_winner", 2);

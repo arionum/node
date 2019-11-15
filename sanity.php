@@ -384,9 +384,9 @@ foreach ($r as $x) {
     // get the current block and check it's blockchain
     $data = peer_post($url."currentBlock", [], 5);
     if ($data === false) {
-            _log("Peer $x[hostname] unresponsive");
-            // if the peer is unresponsive, mark it as failed and blacklist it for a while
-            $db->run(
+        _log("Peer $x[hostname] unresponsive");
+        // if the peer is unresponsive, mark it as failed and blacklist it for a while
+        $db->run(
                 "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
                 [":id" => $x['id']]
             );
@@ -620,7 +620,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
     if ($block_parse_failed==true||$argv[1]=="resync") {
         $last_resync=$db->single("SELECT val FROM config WHERE cfg='last_resync'");
         if ($last_resync<time()-(3600*24)||$argv[1]=="resync") {
-            if (((($current['date']<time()-(3600*72))&&$_config['auto_resync'])!==false)||$argv[1]=="resync") {
+            if ((( ($current['date']<time()-(3600*72) ) && $_config['auto_resync'])!==false ) || $argv[1]=="resync" ) {
                 $db->run("SET foreign_key_checks=0;");
                 $tables = ["accounts", "transactions", "mempool", "masternode","blocks"];
                 foreach ($tables as $table) {
@@ -825,7 +825,7 @@ if ($_config['masternode']==true&&!empty($_config['masternode_public_key'])&&!em
         if ($f) {
             $res=json_decode($f, true);
             $res=$res['data'];
-            if ($res['height']<$current['height']-10080) { 
+            if ($res['height']<$current['height']-10080) {
                 $blacklist=1;
             }
             echo "Masternode Height: ".$res['height']."\n";
