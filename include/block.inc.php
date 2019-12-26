@@ -1320,12 +1320,13 @@ class Block
     public function pop($no = 1)
     {
         $current = $this->current();
-        $this->delete($current['height'] - $no + 1);
+        return $this->delete($current['height'] - $no + 1);
     }
 
     // delete all blocks >= height
     public function delete($height)
     {
+        global $_config;
         if ($height < 2) {
             $height = 2;
         }
@@ -1335,7 +1336,7 @@ class Block
         $r = $db->run("SELECT * FROM blocks WHERE height>=:height ORDER by height DESC", [":height" => $height]);
 
         if (count($r) == 0) {
-            return;
+            return true;
         }
         $db->beginTransaction();
         $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE, votes WRITE,logs WRITE");
@@ -1345,6 +1346,25 @@ class Block
             if ($res === false) {
                 _log("A transaction could not be reversed. Delete block failed.");
                 $db->rollback();
+                // the blockchain has some flaw, we should resync from scratch
+           
+                $current = $this->current();
+                if (($current['date']<time()-(3600*48)) && $_config['auto_resync']!==false) {
+                    _log("Blockchain corrupted. Resyncing from scratch.");
+                    $db->run("SET foreign_key_checks=0;");
+                    $tables = ["accounts", "transactions", "mempool", "masternode","blocks"];
+                    foreach ($tables as $table) {
+                        $db->run("TRUNCATE TABLE {$table}");
+                    }
+                    $db->run("SET foreign_key_checks=1;");
+                    $db->exec("UNLOCK TABLES");
+                            
+              
+                    $db->run("UPDATE config SET val=0 WHERE cfg='sanity_sync'");
+                    @unlink(SANITY_LOCK_PATH);
+                    system("php sanity.php  > /dev/null 2>&1  &");
+                    exit;
+                }
                 $db->exec("UNLOCK TABLES");
                 return false;
             }

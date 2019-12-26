@@ -664,12 +664,18 @@ if ($q == "getAddress") {
      * @apiGroup API
      * @apiDescription Returns all the masternode data
      *
+     * @apiParam {string} [public_key] Optional public key
      *
-     *
-     * @apiSuccess {boolean} data masternode date
+     * @apiSuccess {json} data masternode date
      */
-
-    $res=$db->run("SELECT * FROM masternode ORDER by public_key ASC");
+    $bind=[];
+    $whr='';
+    $public_key=san($data['public_key']);
+    if(!empty($public_key)){
+        $whr="WHERE public_key=:public_key";
+        $bind[':public_key']=$public_key;
+    }
+    $res=$db->run("SELECT * FROM masternode $whr ORDER by public_key ASC",$bind);
 
     api_echo(["masternodes"=>$res, "hash"=>md5(json_encode($res))]);
 } elseif ($q == "getAlias") {

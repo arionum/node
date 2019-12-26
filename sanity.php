@@ -47,8 +47,8 @@ if (file_exists(SANITY_LOCK_PATH)) {
     }
     $pid_time = filemtime(SANITY_LOCK_PATH);
 
-    // If the process died, restart after 10 times the sanity interval
-    if (time() - $pid_time > ($_config['sanity_interval'] * 20 ?? 900 * 20)) {
+    // If the process died, restart after 60 times the sanity interval
+    if (time() - $pid_time > ($_config['sanity_interval'] * 60 ?? 900 * 60)) {
         @unlink(SANITY_LOCK_PATH);
     }
 
@@ -387,9 +387,9 @@ foreach ($r as $x) {
         _log("Peer $x[hostname] unresponsive");
         // if the peer is unresponsive, mark it as failed and blacklist it for a while
         $db->run(
-                "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
-                [":id" => $x['id']]
-            );
+            "UPDATE peers SET fails=fails+1, blacklisted=UNIX_TIMESTAMP()+((fails+1)*3600) WHERE id=:id",
+            [":id" => $x['id']]
+        );
          
         continue;
     }
@@ -457,6 +457,8 @@ echo "Most common block: $most_common_size\n";
 echo "Max height: $largest_height\n";
 echo "Current block: $current[height]\n";
 $block_parse_failed=false;
+
+$failed_syncs=0;
 // if we're not on the largest height
 if ($current['height'] < $largest_height && $largest_height > 1) {
     // start  sanity sync / block all other transactions/blocks
@@ -510,7 +512,11 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                 }
             }
             if ($last_good==$current['height']-1) {
-                $block->pop(1);
+                $try_pop=$block->pop(1);
+                if($try_pop==false){
+                    // we can't pop the last block, we should resync
+                    $block_parse_failed=true;
+                }
             }
             // if last 10 blocks are good, verify all the blocks
             if ($invalid == false) {
@@ -545,7 +551,11 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
             // if the blockchain proves ok, delete until the last block
             if ($invalid == false) {
                 _log("Changing fork, deleting $last_good", 1);
-                $block->delete($last_good);
+                $res=$block->delete($last_good);
+                if($res==false){
+                    $block_parse_failed=true;
+                    break;
+                }
                 $current = $block->current();
                 $data = $current;
             }
@@ -571,6 +581,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                     $block_parse_failed=true;
                     _log("Block check: could not add block - $b[id] - $b[height]");
                     $good_peer = false;
+                    $failed_syncs++;
                     break;
                 }
                 $res = $block->add(
@@ -588,6 +599,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                     $block_parse_failed=true;
                     _log("Block add: could not add block - $b[id] - $b[height]");
                     $good_peer = false;
+                    $failed_syncs++;
                     break;
                 }
 
@@ -601,26 +613,15 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
         if ($good_peer) {
             break;
         }
-    }
-
-    $resyncing=false;
-    if ($block_parse_failed==true&&$current['date']<time()-(3600*24)) {
-        _log("Rechecking reward transactions");
-        $current = $block->current();
-        $rwpb=$db->single("SELECT COUNT(1) FROM transactions WHERE version=0 AND message=''");
-        if ($rwpb!=$current['height']) {
-            $failed=$db->single("SELECT blocks.height FROM blocks LEFT JOIN transactions ON transactions.block=blocks.id and transactions.version=0 and transactions.message='' WHERE transactions.height is NULL ORDER by blocks.height ASC LIMIT 1");
-            if ($failed>1) {
-                _log("Found failed block - $faield");
-                $block->delete($failed);
-                $block_parse_failed==false;
-            }
+        if ($failed_syncs>5) {
+            break;
         }
     }
+
     if ($block_parse_failed==true||$argv[1]=="resync") {
         $last_resync=$db->single("SELECT val FROM config WHERE cfg='last_resync'");
         if ($last_resync<time()-(3600*24)||$argv[1]=="resync") {
-            if ((( ($current['date']<time()-(3600*72) ) && $_config['auto_resync'])!==false ) || $argv[1]=="resync" ) {
+            if ((($current['date']<time()-(3600*72)) && $_config['auto_resync']!==false) || $argv[1]=="resync") {
                 $db->run("SET foreign_key_checks=0;");
                 $tables = ["accounts", "transactions", "mempool", "masternode","blocks"];
                 foreach ($tables as $table) {
@@ -641,42 +642,6 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
 
                 $resyncing=true;
             }
-
-            // needs to be redone due to the assets
-            // if ($resyncing==true) {
-            //     _log("Resyncing accounts");
-            //     $db->run("INSERT into config SET val=UNIX_TIMESTAMP(), cfg='last_resync' ON DUPLICATE KEY UPDATE val=UNIX_TIMESTAMP()");
-            //     $db->exec("LOCK TABLES blocks WRITE, accounts WRITE, transactions WRITE, mempool WRITE, masternode WRITE, peers write, config WRITE, assets WRITE, assets_balance WRITE, assets_market WRITE");
-
-
-            //     $r=$db->run("SELECT * FROM accounts");
-            //     foreach ($r as $x) {
-            //         $alias=$x['alias'];
-            //         if (empty($alias)) {
-            //             $alias="A";
-            //         }
-            //         $rec=$db->single("SELECT SUM(val) FROM transactions WHERE (dst=:id or dst=:alias) AND (height<80000 OR version!=100) and version<111", [":id"=>$x['id'], ":alias"=>$alias]);
-            //         $releases=$db->single("SELECT COUNT(1) FROM transactions WHERE dst=:id AND version=103", [":id"=>$x['id']]);
-            //         if ($releases>0) { //masternode releases
-            //             $rec+=$releases*100000;
-            //         }
-                    
-            //         $spent=$db->single("SELECT SUM(val+fee) FROM transactions WHERE public_key=:pub AND version>0", [":pub"=>$x['public_key']]);
-            //         if ($spent==false) {
-            //             $spent=0;
-            //         }
-            //         $balance=round(($rec-$spent), 8);
-            //         if ($x['balance']!=$balance) {
-            //             // echo "rec: $rec, spent: $spent, bal: $x[balance], should be: $balance - $x[id] $x[public_key]\n";
-            //             if (trim($argv[2])!="check") {
-            //                 $db->run("UPDATE accounts SET balance=:bal WHERE id=:id", [":id"=>$x['id'], ":bal"=>$balance]);
-            //             }
-            //         }
-            //     }
-            //     $current = $block->current();
-            //     $db->run("DELETE FROM masternode WHERE height>:h", [":h"=>$current['height']]);
-            //     $db->exec("UNLOCK TABLES");
-            // }
         }
     }
 
@@ -684,6 +649,23 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
     $db->run("UPDATE config SET val=0 WHERE cfg='sanity_sync'", [":time" => $t]);
 }
 
+
+
+    $resyncing=false;
+    if ($block_parse_failed==true&&$current['date']<time()-(3600*24)) {
+        _log("Rechecking reward transactions");
+        $current = $block->current();
+        $rwpb=$db->single("SELECT COUNT(1) FROM transactions WHERE version=0 AND message=''");
+        if ($rwpb!=$current['height']) {
+            $failed=$db->single("SELECT blocks.height FROM blocks LEFT JOIN transactions ON transactions.block=blocks.id and transactions.version=0 and transactions.message='' WHERE transactions.height is NULL ORDER by blocks.height ASC LIMIT 1");
+            if ($failed>1) {
+                _log("Found failed block - $faield");
+                $block->delete($failed);
+                $block_parse_failed==false;
+            }
+        }
+    }
+   
 
 // deleting mempool transactions older than 14 days
 $db->run("DELETE FROM `mempool` WHERE `date` < UNIX_TIMESTAMP()-(3600*24*14)");
