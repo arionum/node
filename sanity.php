@@ -237,7 +237,10 @@ $blocks = [];
 $blocks_count = [];
 $most_common = "";
 $most_common_size = 0;
+$most_common_height = 0; 
 $total_active_peers = 0;
+
+
 
 // checking peers
 
@@ -422,6 +425,7 @@ foreach ($r as $x) {
     if ($blocks_count[$data['id']] > $most_common_size) {
         $most_common = $data['id'];
         $most_common_size = $blocks_count[$data['id']];
+        $most_common_height = $data['height'];
     }
     // set the largest height block
     if ($data['height'] > $largest_height) {
@@ -452,10 +456,41 @@ foreach ($r as $x) {
         }
     }
 }
+$largest_size=$blocks_count[$largest_height_block];
 echo "Most common: $most_common\n";
-echo "Most common block: $most_common_size\n";
-echo "Max height: $largest_height\n";
+echo "Most common block size: $most_common_size\n";
+echo "Most common height: $most_common_height\n\n";
+echo "Longest chain height: $largest_height\n";
+echo "Longest chain size: $largest_size\n\n";
+echo "Total size: $total_active_peers\n\n";
+
 echo "Current block: $current[height]\n";
+
+// if this is the node that's ahead, and other nodes are not catching up, pop 200
+
+if($largest_height-$most_common_height>100&&$largest_size==1&&$current['id']==$largest_height){
+    _log("Current node is alone on the chain and over 100 blocks ahead. Poping 200 blocks.");
+    $db->run("UPDATE config SET val=1 WHERE cfg='sanity_sync'");
+    $block->pop(200);
+    $db->run("UPDATE config SET val=0 WHERE cfg='sanity_sync'");
+    _log("Exiting sanity, next sanity will sync from 200 blocks ago.");
+
+    @unlink(SANITY_LOCK_PATH);
+    exit;
+}
+
+// if there's a single node with over 100 blocks ahead on a single peer, use the most common block
+if($largest_height-$most_common_height>100&&$largest_size==1){
+    _log("Longest chain is way ahead, using most common block");
+    $largest_height=$most_common_height;
+    $largest_size=$most_common_size;
+    $largest_height_block=$most_common;
+}
+
+
+
+
+
 $block_parse_failed=false;
 
 $failed_syncs=0;
@@ -499,10 +534,12 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                 $data = peer_post($url."getBlock", ["height" => $i]);
                 if ($data === false) {
                     $invalid = true;
+                    _log("Could not get block from $host - $i");
                     break;
                 }
                 $ext = $block->get($i);
                 if ($i == $current['height'] - 100 && $ext['id'] != $data['id']) {
+                    _log("100 blocks ago was still on a different chain. Ignoring.");
                     $invalid = true;
                     break;
                 }
@@ -524,6 +561,7 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
                 for ($i = $last_good; $i <= $largest_height; $i++) {
                     $data = peer_post($url."getBlock", ["height" => $i]);
                     if ($data === false) {
+                        _log("Could not get block from $host - $i");
                         $invalid = true;
                         break;
                     }
