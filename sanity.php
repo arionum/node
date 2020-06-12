@@ -468,7 +468,7 @@ echo "Current block: $current[height]\n";
 
 // if this is the node that's ahead, and other nodes are not catching up, pop 200
 
-if($largest_height-$most_common_height>100&&$largest_size==1&&$current['id']==$largest_height){
+if($largest_height-$most_common_height>100&&$largest_size==1&&$current['id']==$largest_height_block){
     _log("Current node is alone on the chain and over 100 blocks ahead. Poping 200 blocks.");
     $db->run("UPDATE config SET val=1 WHERE cfg='sanity_sync'");
     $block->pop(200);
