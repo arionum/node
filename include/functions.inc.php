@@ -250,6 +250,11 @@ function ec_verify($data, $signature, $key)
     }
     return false;
 }
+// verify the validity of an url
+function isValidURL($url)
+{
+    return preg_match('|^(ht)?(f)?tp(s)?://[a-z0-9-]+(.[a-z0-9-]+)*(:[0-9]+)?(/.*)?$|i', $url);
+}
 
 // POST data to an URL (usualy peer). The data is an array, json encoded with is sent as $_POST['data']
 function peer_post($url, $data = [], $timeout = 60, $debug = false)
@@ -257,6 +262,9 @@ function peer_post($url, $data = [], $timeout = 60, $debug = false)
     global $_config;
     if ($debug) {
         echo "\nPeer post: $url\n";
+    }
+    if (!isValidURL($url)) {
+        return false;
     }
     $postdata = http_build_query(
         [
