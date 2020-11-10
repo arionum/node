@@ -239,7 +239,9 @@ $most_common = "";
 $most_common_size = 0;
 $most_common_height = 0; 
 $total_active_peers = 0;
-
+$largest_most_common = "";
+$largest_most_common_size = 0;
+$largest_most_common_height = 0; 
 
 
 // checking peers
@@ -427,6 +429,11 @@ foreach ($r as $x) {
         $most_common_size = $blocks_count[$data['id']];
         $most_common_height = $data['height'];
     }
+    if ($blocks_count[$data['id']] > $largest_most_common_size && $data['height'] > $current['height']) {
+        $largest_most_common = $data['id'];
+        $largest_most_common_size = $blocks_count[$data['id']];
+        $largest_most_common_height = $data['height'];
+    }
     // set the largest height block
     if ($data['height'] > $largest_height) {
         $largest_height = $data['height'];
@@ -462,6 +469,9 @@ echo "Most common block size: $most_common_size\n";
 echo "Most common height: $most_common_height\n\n";
 echo "Longest chain height: $largest_height\n";
 echo "Longest chain size: $largest_size\n\n";
+echo "Larger Most common: $largest_most_common\n";
+echo "Larger Most common block size: $largest_most_common_size\n";
+echo "Larger Most common height: $largest_most_common_height\n\n";
 echo "Total size: $total_active_peers\n\n";
 
 echo "Current block: $current[height]\n";
@@ -480,11 +490,18 @@ if($largest_height-$most_common_height>100&&$largest_size==1&&$current['id']==$l
 }
 
 // if there's a single node with over 100 blocks ahead on a single peer, use the most common block
-if($largest_height-$most_common_height>100&&$largest_size==1){
-    _log("Longest chain is way ahead, using most common block");
-    $largest_height=$most_common_height;
-    $largest_size=$most_common_size;
-    $largest_height_block=$most_common;
+if($largest_height-$most_common_height>100 && $largest_size==1){
+    if($current['id']==$most_common && $largest_most_common_size>3){
+        _log("Longest chain is way ahead, using largest most common block");
+        $largest_height=$largest_most_common_height;
+        $largest_size=$largest_most_common_size;
+        $largest_height_block=$largest_most_common;
+    } else {
+        _log("Longest chain is way ahead, using most common block");
+        $largest_height=$most_common_height;
+        $largest_size=$most_common_size;
+        $largest_height_block=$most_common;
+    }
 }
 
 
@@ -600,6 +617,10 @@ if ($current['height'] < $largest_height && $largest_height > 1) {
         }
         // if current still doesn't match the data, something went wrong
         if ($data['id'] != $current['id']) {
+            if($largest_size==1){
+                //blacklisting the peer if it's the largest height on a broken blockchain
+                $db->run("UPDATE peers SET blacklisted=UNIX_TIMESTAMP()+1800 WHERE hostname=:host LIMIT 1",[':host'=>$host]);
+            }
             continue;
         }
         // start syncing all blocks
