@@ -814,7 +814,7 @@ if ($q == "getAddress") {
         $whr.="asset=:asset ";
         $bind[':asset']=$asset;
     }
-    if(!empty($account)){
+    elseif(!empty($account)){
         $whr.="account=:account ";
         $bind[':account']=$account;
     }
