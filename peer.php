@@ -23,6 +23,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 OR OTHER DEALINGS IN THE SOFTWARE.
 */
+const SANITY_LOCK_PATH = __DIR__.'/tmp/sanity-lock';
 require_once __DIR__.'/include/init.inc.php';
 header('Content-Type: application/json');
 
@@ -164,6 +165,14 @@ if ($q == "peer") {
         _log('['.$ip."] Block rejected due to sanity sync");
         api_err("sanity-sync");
     }
+    $sanity_lock=fopen(SANITY_LOCK_PATH,'w+');
+    if(!flock($sanity_lock, LOCK_EX | LOCK_NB)){
+        _log('['.$ip."] Block rejected due to sanity sync");
+        api_err("sanity-sync");
+    }
+    // make sure sanity doesn't start while we add a new block and no other blocks are added at the same time
+    flock($sanity_lock, LOCK_EX);
+
     $data['id'] = san($data['id']);
     $current = $block->current();
     // block already in the blockchain

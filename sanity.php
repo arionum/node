@@ -37,29 +37,13 @@ if (php_sapi_name() !== 'cli') {
 require_once __DIR__.'/include/init.inc.php';
 
 // make sure there's only a single sanity process running at the same time
-if (file_exists(SANITY_LOCK_PATH)) {
-    $ignore_lock = false;
-    if ($argv[1] == "force") {
-        $res = intval(shell_exec("ps aux|grep sanity.php|grep -v grep|wc -l"));
-        if ($res == 1) {
-            $ignore_lock = true;
-        }
-    }
-    $pid_time = filemtime(SANITY_LOCK_PATH);
-
-    // If the process died, restart after 60 times the sanity interval
-    if (time() - $pid_time > ($_config['sanity_interval'] * 60 ?? 900 * 60)) {
-        @unlink(SANITY_LOCK_PATH);
-    }
-
-    if (!$ignore_lock) {
-        die("Sanity lock in place".PHP_EOL);
-    }
+$sanity_lock=fopen(SANITY_LOCK_PATH,'w+');
+if(!flock($sanity_lock, LOCK_EX | LOCK_NB)){
+    die("Sanity lock in place".PHP_EOL);
 }
-
 // set the new sanity lock
-$lock = fopen(SANITY_LOCK_PATH, "w");
-fclose($lock);
+flock($sanity_lock, LOCK_EX);
+
 $arg = trim($argv[1]);
 $arg2 = trim($argv[2]);
 echo "Sleeping for 3 seconds\n";
