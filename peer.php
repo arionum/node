@@ -42,6 +42,12 @@ if ($_POST['coin'] != $_config['coin']) {
 $ip = san_ip($_SERVER['REMOTE_ADDR']);
 $ip = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 
+// there should not be any local peering attempts
+if($_SERVER['REMOTE_ADDR']==$_SERVER['SERVER_ADDR']){
+        api_err("invalid-ip");
+}
+
+
 // peer with the current node
 if ($q == "peer") {
     // sanitize the hostname
