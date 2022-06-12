@@ -339,15 +339,16 @@ class Block
                     $blacklist[]=san($x['message']);
                 }
             }
-            $r=$db->run("SELECT public_key FROM masternode WHERE voted=1");
-            foreach ($r as $masternode) {
-                if (!in_array($masternode, $blacklist)) {
-                    _log("Masternode removed from voting blacklist - $masternode", 3);
-                    $this->add_log($hash, ["table"=>"masternode", "key"=>"public_key","id"=>$masternode, "vals"=>['voted'=>1]]);
-                    $db->run("UPDATE masternode SET voted=0 WHERE public_key=:pub", [":pub"=>$masternode]);
+            if($height>=1641600){
+                $r=$db->run("SELECT public_key FROM masternode WHERE voted=1");
+                foreach ($r as $masternode) {
+                    if (!in_array($masternode['public_key'], $blacklist)) {
+                        _log("Masternode removed from voting blacklist - $masternode[public_key]", 3);
+                        $this->add_log($hash, ["table"=>"masternode", "key"=>"public_key","id"=>$masternode['public_key'], "vals"=>['voted'=>1]]);
+                        $db->run("UPDATE masternode SET voted=0 WHERE public_key=:pub", [":pub"=>$masternode['public_key']]);
+                    }
                 }
             }
-
             foreach ($blacklist as $masternode) {
                 $res=$db->single("SELECT voted FROM masternode WHERE public_key=:pub", [":pub"=>$masternode]);
                 if ($res==0) {
