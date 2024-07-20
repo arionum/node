@@ -1242,6 +1242,9 @@ class Block
                 }
 
                 // prepare total balance
+                if(!isset($balance[$x['src']])){
+                    $balance[$x['src']]=0;
+                }
                 $balance[$x['src']] += $x['val'] + $x['fee'];
 
                 // check if the transaction is already on the blockchain
