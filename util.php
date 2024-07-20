@@ -30,7 +30,7 @@ if (php_sapi_name() !== 'cli') {
 }
 
 require_once __DIR__.'/include/init.inc.php';
-$cmd = trim($argv[1]);
+$cmd = trim($argv[1] ?? "");
 
 /**
  * @api {php util.php} clean Clean
@@ -73,7 +73,7 @@ elseif ($cmd == 'pop') {
         die("Sanity running. Wait for it to finish");
     }
     touch("tmp/sanity-lock");
-    $no = intval($argv[2]);
+    $no = intval($argv[2] ?? 0);
     $block = new Block();
     $block->pop($no);
     unlink("tmp/sanity-lock");
@@ -124,7 +124,8 @@ elseif ($cmd == 'block-time') {
 
 
 elseif ($cmd == "peer") {
-    $res = peer_post($argv[2]."/peer.php?q=peer", ["hostname" => $_config['hostname']]);
+    $peer=trim($argv[2] ?? "");
+    $res = peer_post($peer."/peer.php?q=peer", ["hostname" => $_config['hostname']]);
     if ($res !== false) {
         echo "Peering OK\n";
     } else {
@@ -188,8 +189,8 @@ elseif ($cmd == "current") {
  *
  */
 elseif ($cmd == "blocks") {
-    $height = intval($argv[2]);
-    $limit = intval($argv[3]);
+    $height = intval($argv[2] ?? 0);
+    $limit = intval($argv[3] ?? 100);
     if ($limit < 1) {
         $limit = 100;
     }
@@ -286,7 +287,7 @@ elseif ($cmd == "mempool") {
  * Peer removed
  */
 elseif ($cmd == "delete-peer") {
-    $peer = trim($argv[2]);
+    $peer = trim($argv[2] ?? 0);
     if (empty($peer)) {
         die("Invalid peer");
     }
@@ -319,7 +320,7 @@ elseif ($cmd == "delete-peer") {
  */
 elseif ($cmd == "peers-block") {
     $only_diff = false;
-    if ($argv[2] == "diff") {
+    if (isset($argv[2]) && $argv[2] == "diff") {
         $current = $db->single("SELECT height FROM blocks ORDER by height DESC LIMIT 1");
         $only_diff = true;
     }
@@ -327,7 +328,7 @@ elseif ($cmd == "peers-block") {
     foreach ($r as $x) {
         $a = peer_post($x['hostname']."/peer.php?q=currentBlock", [], 5);
         $enc = base58_encode($x['hostname']);
-        if ($argv[2] == "debug") {
+        if (isset($argv[2]) && $argv[2] == "debug") {
             echo "$enc\t";
         }
         if ($only_diff == false || $current != $a['height']) {
@@ -350,7 +351,7 @@ elseif ($cmd == "peers-block") {
  */
 
 elseif ($cmd == "balance") {
-    $id = san($argv[2]);
+    $id = san($argv[2] ?? "");
     $res = $db->single(
         "SELECT balance FROM accounts WHERE id=:id OR public_key=:id2 LIMIT 1",
         [":id" => $id, ":id2" => $id]
@@ -391,7 +392,7 @@ elseif ($cmd == "balance") {
  * }
  */
 elseif ($cmd == "block") {
-    $id = san($argv[2]);
+    $id = san($argv[2] ?? "");
     $res = $db->row("SELECT * FROM blocks WHERE id=:id OR height=:id2 LIMIT 1", [":id" => $id, ":id2" => $id]);
 
     var_dump($res);
@@ -410,7 +411,7 @@ elseif ($cmd == "block") {
  * The address is valid
  */
 elseif ($cmd == "check-address") {
-    $dst = trim($argv[2]);
+    $dst = trim($argv[2] ?? "");
     $acc = new Account();
     if (!$acc->valid($dst)) {
         die("Invalid address");
@@ -438,7 +439,7 @@ elseif ($cmd == "check-address") {
  */
 
 elseif ($cmd == 'get-address') {
-    $public_key = trim($argv2);
+    $public_key = trim($argv[2] ?? "");
     if (strlen($public_key) < 32) {
         die("Invalid public key");
     }
@@ -487,7 +488,7 @@ elseif ($cmd == 'get-address') {
         $balance=round(($rec-$spent), 8);
         if ($x['balance']!=$balance) {
             echo "rec: $rec, spent: $spent, bal: $x[balance], should be: $balance - $x[id] $x[public_key]\n";
-            if (trim($argv[2])!="check") {
+            if (trim($argv[2] ?? "")!="check") {
                 $db->run("UPDATE accounts SET balance=:bal WHERE id=:id", [":id"=>$x['id'], ":bal"=>$balance]);
             }
         }
@@ -499,8 +500,8 @@ elseif ($cmd == 'get-address') {
     $block=new Block();
 
     $current=$block->current();
-    $peer=trim($argv[2]);
-    $limit=intval($argv[3]);
+    $peer=trim($argv[2] ?? "");
+    $limit=intval($argv[3] ?? 0);
     if ($limit==0) {
         $limit=5000;
     }
@@ -512,7 +513,7 @@ elseif ($cmd == 'get-address') {
         $our=$block->export(false, $i);
         if ($data!=$our) {
             echo "Failed block -> $i\n";
-            if ($argv[4]=="dump") {
+            if (isset($argv[4]) && $argv[4]=="dump") {
                 echo "\n\n  ---- Internal ----\n\n";
                 var_dump($our);
                 echo "\n\n  ---- External ----\n\n";
@@ -521,7 +522,7 @@ elseif ($cmd == 'get-address') {
         }
     }
 } elseif ($cmd=='compare-accounts') {
-    $peer=trim($argv[2]);
+    $peer=trim($argv[2] ?? "");
     $r=$db->run("SELECT id,balance FROM accounts");
     foreach ($r as $x) {
         $data=peer_post($peer."/api.php?q=getBalance", ["account" => $x['id']]);
@@ -547,12 +548,12 @@ elseif ($cmd == 'get-address') {
 } elseif ($cmd == "version") {
     echo "\n\n".VERSION."\n\n";
 } elseif ($cmd == "sendblock") {
-    $peer=trim($argv[3]);
+    $peer=trim($argv[3] ?? "");
     if (!filter_var($peer, FILTER_VALIDATE_URL)) {
         die("Invalid peer hostname");
     }
     $peer = filter_var($peer, FILTER_SANITIZE_URL);
-    $height=intval($argv[2]);
+    $height=intval($argv[2] ?? "");
     $block=new Block();
     $data = $block->export("", $height);
 
@@ -563,7 +564,7 @@ elseif ($cmd == 'get-address') {
     $response = peer_post($peer."/peer.php?q=submitBlock", $data, 60, true);
     var_dump($response);
 } elseif ($cmd == "recheck-external-blocks") {
-    $peer=trim($argv[2]);
+    $peer=trim($argv[2] ?? "");
     if (!filter_var($peer, FILTER_VALIDATE_URL)) {
         die("Invalid peer hostname");
     }
@@ -572,7 +573,7 @@ elseif ($cmd == 'get-address') {
 
     $blocks = [];
     $block = new Block();
-    $height=intval($argv[3]);
+    $height=intval($argv[3] ?? 0);
 
     $last=peer_post($peer."/peer.php?q=currentBlock");
 
