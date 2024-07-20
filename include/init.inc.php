@@ -60,7 +60,7 @@ foreach ($query as $res) {
 }
 
 // nothing is allowed while in maintenance
-if ($_config['maintenance'] == 1) {
+if (isset($_config['maintenance']) && $_config['maintenance'] == 1) {
     api_err("under-maintenance");
 }
 
@@ -94,9 +94,10 @@ if ($_config['testnet'] == true) {
 }
 
 // current hostname
-$hostname = (!empty($_SERVER['HTTPS']) ? 'https' : 'http')."://".san_host($_SERVER['HTTP_HOST']);
+$http_host=san_host($_SERVER['HTTP_HOST'] ?? "");
+$hostname = (!empty($_SERVER['HTTPS']) ? 'https' : 'http')."://".$http_host;
 // set the hostname to the current one
-if ($hostname != $_config['hostname'] && $_SERVER['HTTP_HOST'] != "localhost" && $_SERVER['HTTP_HOST'] != "127.0.0.1" && $_SERVER['hostname'] != '::1' && php_sapi_name() !== 'cli' && ($_config['allow_hostname_change'] != false || empty($_config['hostname']))) {
+if ($hostname != $_config['hostname'] && $http_host != "localhost" && $http_host != "127.0.0.1" && $_SERVER['hostname'] != '::1' && php_sapi_name() !== 'cli' && ($_config['allow_hostname_change'] != false || empty($_config['hostname']))) {
     $db->run("UPDATE config SET val=:hostname WHERE cfg='hostname' LIMIT 1", [":hostname" => $hostname]);
     $_config['hostname'] = $hostname;
 }
