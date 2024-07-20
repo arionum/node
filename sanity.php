@@ -44,15 +44,15 @@ if(!flock($sanity_lock, LOCK_EX | LOCK_NB)){
 // set the new sanity lock
 flock($sanity_lock, LOCK_EX);
 
-$arg = trim($argv[1]);
-$arg2 = trim($argv[2]);
+$arg = trim($argv[1] ?? "");
+$arg2 = trim($argv[2] ?? "");
 echo "Sleeping for 3 seconds\n";
 // sleep for 3 seconds to make sure there's a delay between starting the sanity and other processes
 if ($arg != "microsanity") {
     sleep(3);
 }
 
-if ($argv[1]=="dev") {
+if ($arg=="dev") {
     error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
     ini_set("display_errors", "on");
 }
@@ -305,7 +305,8 @@ if ($total_peers == 0 && $_config['testnet'] == false) {
 }
 
 // contact all the active peers
- $i = 0;
+$i = 0;
+$largest_height=0;
 foreach ($r as $x) {
     _log("Contacting peer $x[hostname]");
     $url = $x['hostname']."/peer.php?q=";
@@ -327,7 +328,7 @@ foreach ($r as $x) {
             $peer['ip'] = san_ip($peer['ip']);
             $pid = md5($peer['hostname']);
             // do not peer if we are already peered
-            if ($peered[$pid] == 1) {
+            if (isset($peered[$pid]) && $peered[$pid] == 1) {
                 continue;
             }
             $peered[$pid] = 1;
@@ -404,6 +405,7 @@ foreach ($r as $x) {
     // add the hostname and block relationship to an array
     $block_peers[$data['id']][] = $x['hostname'];
     // count the number of peers with this block id
+    if(!isset($blocks_count[$data['id']])) { $blocks_count[$data['id']]=0; }
     $blocks_count[$data['id']]++;
     // keep block data for this block id
     $blocks[$data['id']] = $data;
