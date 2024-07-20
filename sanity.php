@@ -27,7 +27,7 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 const SANITY_LOCK_PATH = __DIR__.'/tmp/sanity-lock';
 
 set_time_limit(0);
-error_reporting(0);
+
 
 // make sure it's not accessible in the browser
 if (php_sapi_name() !== 'cli') {
@@ -53,7 +53,6 @@ if ($arg != "microsanity") {
 }
 
 if ($arg=="dev") {
-    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
     ini_set("display_errors", "on");
 }
 
