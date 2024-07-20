@@ -110,7 +110,7 @@ if ($type == "block") {
     // send the block as POST to the peer
     echo "Block sent to $hostname:\n";
     $response = peer_post($hostname."/peer.php?q=submitBlock", $data, 60, $debug);
-    _log("Propagating block to $hostname - [result: $response] $data[height] - $data[id]",2);
+    _log("Propagating block to $hostname - $data[height] - $data[id]",2);
     if (is_string($response) && $response == "block-ok") {
         echo "Block $data[height] accepted. Exiting.\n";
         exit;
