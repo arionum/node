@@ -3,6 +3,7 @@
 // simple santization function to accept only alphanumeric characters
 function san($a, $b = "")
 {
+    if(empty($a)) return "";
     $a = preg_replace("/[^a-zA-Z0-9".$b."]/", "", $a);
 
     return $a;
@@ -10,12 +11,14 @@ function san($a, $b = "")
 
 function san_ip($a)
 {
+    if(empty($a)) return "";
     $a = preg_replace("/[^a-fA-F0-9\[\]\.\:]/", "", $a);
     return $a;
 }
 
 function san_host($a)
 {
+    if(empty($a)) return "";
     $a = preg_replace("/[^a-zA-Z0-9\.\-\:\/]/", "", $a);
     return $a;
 }
@@ -285,14 +288,14 @@ function peer_post($url, $data = [], $timeout = 60, $debug = false)
 
     $context = stream_context_create($opts);
 
-    $result = file_get_contents($url, false, $context);
+    $result = @file_get_contents($url, false, $context);
     if ($debug) {
         echo "\nPeer response: $result\n";
     }
     $res = json_decode($result, true);
 
     // the function will return false if something goes wrong
-    if ($res['status'] != "ok" || $res['coin'] != $_config['coin']) {
+    if ($res==false || is_null($res) || $res['status'] != "ok" || $res['coin'] != $_config['coin']) {
         return false;
     }
     return $res['data'];
