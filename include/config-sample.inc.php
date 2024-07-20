@@ -147,6 +147,9 @@ $_config['log_file'] = '/var/log/aro.log';
 // Log verbosity (default 0, maximum 3)
 $_config['log_verbosity'] = 0;
 
+// Log E_ALL php errors
+$_config['log_php_errors'] = false;
+
 /*
 |--------------------------------------------------------------------------
 | Masternode Configuration
