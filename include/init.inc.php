@@ -1,20 +1,23 @@
 <?php
 // ARO version
-define("VERSION", "1.0.0-alpha.7");
+define("VERSION", "1.0.0-alpha.8");
 // UTC timezone by default
 date_default_timezone_set("UTC");
 
-// error_reporting(E_ALL & ~E_NOTICE);
-error_reporting(0);
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0); 
 // not accessible directly
 if (php_sapi_name() !== 'cli' && substr_count($_SERVER['PHP_SELF'], "/") > 1) {
     die("This application should only be run in the main directory /");
 }
-
-require_once __DIR__.'/Exception.php';
 require_once __DIR__.'/config.inc.php';
+if(isset($_config['log_php_errors']) && $_config['log_php_errors'] == true){
+    error_reporting(E_ALL);
+} else {
+    error_reporting(0);
+}
+require_once __DIR__.'/Exception.php';
+
 require_once __DIR__.'/db.inc.php';
 require_once __DIR__.'/functions.inc.php';
 require_once __DIR__.'/Blacklist.php';
