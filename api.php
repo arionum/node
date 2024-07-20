@@ -452,15 +452,15 @@ if ($q == "getAddress") {
 
 
 
-    $private_key = san($data['private_key']);
+    $private_key = san($data['private_key'] ?? "");
     if (!$acc->valid_key($private_key)) {
         api_err("Invalid private key");
     }
-    $signature = san($data['signature']);
+    $signature = san($data['signature'] ?? "");
     if (!$acc->valid_key($signature)) {
         api_err("Invalid signature");
     }
-    $date = $data['date'] + 0;
+    $date = ($data['date'] ?? 0) + 0;
 
     if ($date == 0) {
         $date = time();
