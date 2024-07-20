@@ -27,18 +27,18 @@ set_time_limit(360);
 require_once __DIR__.'/include/init.inc.php';
 $block = new Block();
 
-$type = san($argv[1]);
-$id = san($argv[2]);
+$type = san($argv[1] ?? "");
+$id = san($argv[2] ?? "");
 $debug = false;
 $linear = false;
 // if debug mode, all data is printed to console, no background processes
-if (trim($argv[5]) == 'debug') {
+if (trim($argv[5] ?? "") == 'debug') {
     $debug = true;
 }
-if (trim($argv[5]) == 'linear') {
+if (trim($argv[5] ?? "") == 'linear') {
     $linear = true;
 }
-$peer = san(trim($argv[3]));
+$peer = san(trim($argv[3] ?? ""));
 
 
 // broadcasting a block to all peers
@@ -111,10 +111,10 @@ if ($type == "block") {
     echo "Block sent to $hostname:\n";
     $response = peer_post($hostname."/peer.php?q=submitBlock", $data, 60, $debug);
     _log("Propagating block to $hostname - [result: $response] $data[height] - $data[id]",2);
-    if ($response == "block-ok") {
-        echo "Block $i accepted. Exiting.\n";
+    if (is_string($response) && $response == "block-ok") {
+        echo "Block $data[height] accepted. Exiting.\n";
         exit;
-    } elseif ($response['request'] == "microsync") {
+    } elseif (isset($response['request']) && $response['request'] == "microsync") {
         // the peer requested us to send more blocks, as it's behind
         echo "Microsync request\n";
         $height = intval($response['height']);
@@ -142,7 +142,7 @@ if ($type == "block") {
             }
             echo "Block\t$i\t accepted\n";
         }
-    } elseif ($response == "reverse-microsanity") {
+    } elseif (is_string($response) && $response == "reverse-microsanity") {
         // the peer informe us that we should run a microsanity
         echo "Running microsanity\n";
         $ip = trim($argv[4]);
