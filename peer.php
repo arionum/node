@@ -71,7 +71,7 @@ if ($q == "peer") {
         [":hostname" => $hostname, ":ip" => $ip]
     );
     if ($res == 1) {
-        if (isset(data['repeer']) && $data['repeer'] == 1) {
+        if (isset($data['repeer']) && $data['repeer'] == 1) {
             $res = peer_post($hostname."/peer.php?q=peer", ["hostname" => $_config['hostname']]);
             if ($res !== false) {
                 api_echo("re-peer-ok");
