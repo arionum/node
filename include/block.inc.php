@@ -180,7 +180,11 @@ class Block
         if ($res != 1) {
             // rollback and exit if it fails
             _log("Block DB insert failed");
-            $db->rollback();
+            try {
+                $db->rollback();  
+            } Catch (Exception $ex){
+                // no transactions made
+            }
             $db->exec("UNLOCK TABLES");
             return false;
         }
@@ -190,7 +194,11 @@ class Block
         if ($res == false) {
             // rollback and exit if it fails
             _log("Reward DB insert failed");
-            $db->rollback();
+            try {
+                $db->rollback();  
+            } Catch (Exception $ex){
+                // no transactions made
+            }
             $db->exec("UNLOCK TABLES");
             return false;
         }
@@ -222,7 +230,11 @@ class Block
                 if ($res != 1) {
                     // rollback and exit if it fails
                     _log("Masternode Cold reward DB insert failed");
-                    $db->rollback();
+                    try {
+                        $db->rollback();  
+                    } Catch (Exception $ex){
+                        // no transactions made
+                    }
                     $db->exec("UNLOCK TABLES");
                     return false;
                 }
@@ -256,7 +268,11 @@ class Block
             if ($res != 1) {
                 // rollback and exit if it fails
                 _log("Masternode reward DB insert failed");
-                $db->rollback();
+                    try {
+                        $db->rollback();  
+                    } Catch (Exception $ex){
+                        // no transactions made
+                    }
                 $db->exec("UNLOCK TABLES");
                 return false;
             }
@@ -265,7 +281,11 @@ class Block
                 
                     // rollback and exit if it fails
                 _log("Masternode log DB insert failed");
-                $db->rollback();
+                try {
+                    $db->rollback();  
+                } Catch (Exception $ex){
+                    // no transactions made
+                }
                 $db->exec("UNLOCK TABLES");
                 return false;
             }
@@ -299,7 +319,11 @@ class Block
         // if any fails, rollback
         if ($res == false) {
             _log("Rollback block", 3);
-            $db->rollback();
+            try {
+                $db->rollback();  
+            } Catch (Exception $ex){
+                // no transactions made
+            }
         } else {
             _log("Commiting block", 3);
             $db->commit();
@@ -1349,7 +1373,11 @@ class Block
             $res = $trx->reverse($x['id']);
             if ($res === false) {
                 _log("A transaction could not be reversed. Delete block failed.");
-                $db->rollback();
+                try {
+                    $db->rollback();  
+                } Catch (Exception $ex){
+                    // no transactions made
+                }
                 // the blockchain has some flaw, we should resync from scratch
            
                 $current = $this->current();
@@ -1375,7 +1403,11 @@ class Block
             $res = $db->run("DELETE FROM blocks WHERE id=:id", [":id" => $x['id']]);
             if ($res != 1) {
                 _log("Delete block failed.");
-                $db->rollback();
+                try {
+                    $db->rollback();  
+                } Catch (Exception $ex){
+                    // no transactions made
+                }
                 $db->exec("UNLOCK TABLES");
                 return false;
             }
@@ -1409,7 +1441,11 @@ class Block
         $res = $trx->reverse($x['id']);
         if ($res === false) {
             // rollback if you can't reverse the transactions
-            $db->rollback();
+            try {
+                $db->rollback();  
+            } Catch (Exception $ex){
+                // no transactions made
+            }
             $db->exec("UNLOCK TABLES");
             return false;
         }
@@ -1417,7 +1453,11 @@ class Block
         $res = $db->run("DELETE FROM blocks WHERE id=:id", [":id" => $x['id']]);
         if ($res != 1) {
             //rollback if you can't delete the block
-            $db->rollback();
+            try {
+                $db->rollback();  
+            } Catch (Exception $ex){
+                // no transactions made
+            }
             $db->exec("UNLOCK TABLES");
             return false;
         }
