@@ -100,6 +100,9 @@ if ($_config['testnet'] == true) {
 $http_host=san_host($_SERVER['HTTP_HOST'] ?? "");
 $hostname = (!empty($_SERVER['HTTPS']) ? 'https' : 'http')."://".$http_host;
 // set the hostname to the current one
+if(!isset($_config['hostname'])){
+    $_config['hostname']="";
+}
 if ($hostname != $_config['hostname'] && $http_host != "localhost" && $http_host != "127.0.0.1" && $_SERVER['hostname'] != '::1' && php_sapi_name() !== 'cli' && ($_config['allow_hostname_change'] != false || empty($_config['hostname']))) {
     $db->run("UPDATE config SET val=:hostname WHERE cfg='hostname' LIMIT 1", [":hostname" => $hostname]);
     $_config['hostname'] = $hostname;
