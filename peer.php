@@ -141,6 +141,8 @@ if ($q == "peer") {
     }
     $acc = new Account();
     $src = $acc->get_address($data['public_key']);
+    $val = $data['val'] ?? 0;
+    $fee = $data['fee'] ?? 0;
     // make sure the sender has enough balance
     $balance = $db->single("SELECT balance FROM accounts WHERE id=:id", [":id" => $src]);
     if ($balance < $val + $fee) {
