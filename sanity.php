@@ -37,8 +37,8 @@ if (php_sapi_name() !== 'cli') {
 require_once __DIR__.'/include/init.inc.php';
 
 // make sure there's only a single sanity process running at the same time
-$sanity_lock=fopen(SANITY_LOCK_PATH,'w+');
-if(!flock($sanity_lock, LOCK_EX | LOCK_NB)){
+$sanity_lock=@fopen(SANITY_LOCK_PATH,'w+');
+if($sanity_lock==false || !flock($sanity_lock, LOCK_EX | LOCK_NB)){
     die("Sanity lock in place".PHP_EOL);
 }
 // set the new sanity lock
