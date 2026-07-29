@@ -2,6 +2,27 @@
 
 The Arionum (ARO) cryptocurrency node.
 
+
+
+
+**NOTIFICATION AroDev 30.07.2026**
+
+The repository is no longer maintained by its original developers.
+
+A full backup of the blockchain at the height 3456135 is available at https://github.com/arionum/node/releases/tag/bootstrap-3456135
+
+This can be used to restart the blockchain if all nodes are shutdown.
+
+The code is released under the MIT license, anyone is free to fork it and use it as he sees fit.
+
+I would like to thank everyone who supported this project for the past 8 years.
+
+I wish you all the best!
+
+/AroDev
+
+
+
 ## Install
 
 **Hardware Requirements:**
